@@ -5,7 +5,12 @@
 LEDController::LEDController(lamp_status* lamp_status_request):
 m_lamp_status_request(lamp_status_request)
 {
-  
+  m_static_effects = new LEDStaticEffects(this, m_leds, &m_timer);
+}
+
+LEDController::~LEDController()
+{
+  delete m_static_effects;
 }
 
 void LEDController::setRGB(RGBcolor color)
@@ -58,12 +63,37 @@ void LEDController::update_brightness()
 
 void LEDController::feed()
 {
-  switch(m_mode)
+  /* Music effects */
+  if(m_mode > 1 && m_mode < 10)
   {
-    case 2:
-      test_effect();
-      break;
+    switch(m_mode)
+    {
+      case 2:
+        test_effect();
+        break;
+    }
   }
+
+  /* Static effects */
+  else if(m_mode >= 10)
+  {
+    switch(m_mode - 10)
+    {
+      case RGB_LOOP:
+        m_static_effects->RGBLoop();
+        break;
+      case FADE_IN_OUT:
+        m_static_effects->FadeInOut(m_lamp_status_request->color.R, m_lamp_status_request->color.G, m_lamp_status_request->color.B);
+        break;
+      case STROBE:
+        m_static_effects->Strobe(m_lamp_status_request->color.R, m_lamp_status_request->color.G, m_lamp_status_request->color.B,50, 30, 500);
+        break;
+      default:
+        break;      
+    }
+  }
+  
+  
 }
   
 void LEDController::update_mode()
@@ -79,6 +109,11 @@ void LEDController::update_mode()
       setRGB(20,20,20);
       break;
   }
+}
+
+void LEDController::end_effect()
+{
+  m_static_effects->end_effect();
 }
 
 void LEDController::test_effect()

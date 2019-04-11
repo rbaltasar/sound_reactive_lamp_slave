@@ -32,8 +32,6 @@ WiFiClient espClient;
 PubSubClient client(espClient);
 DynamicJsonBuffer jsonBuffer(50);
 
-bool isStreaming = false;
-
 lamp_status current_status;
 lamp_status status_request;
 
@@ -61,6 +59,7 @@ void setup()
   status_request.color.R = 20;
   status_request.color.G = 20;
   status_request.color.B = 20;
+  status_request.streaming = false;
 }
 
 String IpAddress2String(const IPAddress& ipAddress)
@@ -196,14 +195,20 @@ void network_loop()
   /* MQTT loop */
   if (!client.connected()) reconnect();
   client.loop();
+
+  //Serial.println("Network loop");
+
+  //delay(1000);
+  //client.publish("test_node/test", "");
 }
 
 void streaming_loop()
 {
     
-  isStreaming = udp_handler.network_loop();
+  //isStreaming = udp_handler.network_loop();
+  
 
-  if(!isStreaming)
+  if(!status_request.streaming)
   {
     udp_handler.stop();
 
@@ -227,13 +232,16 @@ void status_update()
   /* Check difference in mode request */
   if(status_request.lamp_mode != current_status.lamp_mode)
   {
+    /* Finish previous effect */
+    LED_controller.end_effect();
+    
     /* Streaming request */
     if(status_request.lamp_mode == 3)
     {
       Serial.println("Streaming request received");
       /* Start UDP socket */
       udp_handler.begin();
-      isStreaming = true;
+      status_request.streaming = true;
       /* Go to lamp mode 2 to show a demo effect */
       status_request.lamp_mode = 2;
     }    
@@ -275,7 +283,7 @@ void loop()
 {
 
   /* UDP streaming. Handle only UDP communication */
-  if(isStreaming)
+  if(status_request.streaming)
   {
     streaming_loop();    
   }
@@ -286,6 +294,7 @@ void loop()
     network_loop();
     updater.OTA_handle();
     status_update();
+  
   }
 
   /* Feed the LED controller with the latest available info */

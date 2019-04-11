@@ -27,6 +27,14 @@ struct lamp_status
   RGBcolor color;
   uint8_t brightness;
   bool resync;
+  bool streaming;
+};
+
+enum StaticMode
+{
+  RGB_LOOP = 0,
+  FADE_IN_OUT = 1,
+  STROBE = 2  
 };
 
 #endif

@@ -10,7 +10,10 @@
 #include "config.h"
 #include <FastLED.h>
 #include "common_datatypes.h"
+#include "LED_Static_Effects.h"
 #include "timeSync.h"
+
+class LEDStaticEffects;
 
 class LEDController
 {
@@ -29,10 +32,12 @@ private:
   uint8_t led_idx = 0;
   uint8_t print_task = 0;
 
+  LEDStaticEffects* m_static_effects;
+
 public: 
 
   LEDController(lamp_status* lamp_status_request);
-
+  ~LEDController();
   void setup(); 
 
   void update_color();
@@ -46,6 +51,8 @@ public:
   void setRGB(uint8_t R, uint8_t G, uint8_t B);
 
   void test_effect();
+
+  void end_effect();
 
 };
 
