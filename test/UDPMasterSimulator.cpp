@@ -18,6 +18,61 @@ struct color_request {
 };
 
 
+void run_multicast()
+{
+  //udp_server server("192.168.2.122",7001);
+  std::vector<udp_client*> client_list;
+  //client_list.push_back(std::make_unique<udp_client>(udp_client("192.168.2.122",7001)));
+  //client_list.push_back(udp_client("192.168.2.122",7001));
+  //auto client_test = std::make_unique<udp_client>(udp_client("192.168.2.122",7001));
+  udp_client* client_0 = new udp_client("239.1.2.3",7001);
+  client_list.push_back(client_0);
+
+  std::cout << "Created Client list" << std::endl;
+
+  udp_server server("192.168.2.120",7001);
+  std::cout << "Created Server" << std::endl;
+
+  sync_request msg;
+  msg.msgID = 0x02;
+
+  uint8_t response = 0;
+
+  /* Send messages */
+  std::cout << "Sending first sync message" << std::endl;
+  msg.msgContent = 0xEA;
+  client_list[0]->send((char*)&msg, sizeof(msg));
+  std::this_thread::sleep_for(std::chrono::milliseconds(100));
+}
+
+void stop_multicast()
+{
+  //udp_server server("192.168.2.122",7001);
+  std::vector<udp_client*> client_list;
+  //client_list.push_back(std::make_unique<udp_client>(udp_client("192.168.2.122",7001)));
+  //client_list.push_back(udp_client("192.168.2.122",7001));
+  //auto client_test = std::make_unique<udp_client>(udp_client("192.168.2.122",7001));
+  udp_client* client_0 = new udp_client("239.1.2.3",7001);
+  client_list.push_back(client_0);
+
+  std::cout << "Created Client list" << std::endl;
+
+  udp_server server("192.168.2.120",7001);
+  std::cout << "Created Server" << std::endl;
+
+  sync_request msg;
+  msg.msgID = 0x03;
+
+  uint8_t response = 0;
+
+  /* Send messages */
+  std::cout << "Sending first sync message" << std::endl;
+  msg.msgContent = 0xEA;
+  client_list[0]->send((char*)&msg, sizeof(msg));
+  std::this_thread::sleep_for(std::chrono::milliseconds(100));
+}
+
+
 void run_sync()
 {
   //udp_server server("192.168.2.122",7001);
@@ -86,38 +141,36 @@ void run_sync()
   delete client_2;
 }
 
-
-void run_test()
+void run_test_multicast()
 {
-
-  /* Do synchronization */
-  run_sync();
-
-  std::cout << "Synchronization done. Waiting 1 second" << std::endl;
-
-  std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
   //udp_server server("192.168.2.122",7001);
   std::vector<udp_client*> client_list;
   //client_list.push_back(std::make_unique<udp_client>(udp_client("192.168.2.122",7001)));
   //client_list.push_back(udp_client("192.168.2.122",7001));
   //auto client_test = std::make_unique<udp_client>(udp_client("192.168.2.122",7001));
-  udp_client* client_0 = new udp_client("192.168.2.124",7001);
-  udp_client* client_1 = new udp_client("192.168.2.122",7001);
-  udp_client* client_2 = new udp_client("192.168.2.113",7001);
+  udp_client* client_0 = new udp_client("239.1.2.3",7001);
   client_list.push_back(client_0);
-  client_list.push_back(client_1);
-  client_list.push_back(client_2);
 
   std::cout << "Created Client list" << std::endl;
 
   udp_server server("192.168.2.120",7001);
   std::cout << "Created Server" << std::endl;
 
+  /* Sync request */
   color_request msg;
-  msg.msgID = 0x01;
+  msg.msgID = 0x02;
 
-  uint32_t num_iterations = 10;
+  uint8_t response = 0;
+
+  /* Send messages */
+  std::cout << "Sending first sync message" << std::endl;
+
+  client_list[0]->send((char*)&msg, sizeof(msg));
+  std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+
+  msg.msgID = 0x01;
+  uint32_t num_iterations = 100;
 
   std::cout << "Starting streaming with " << num_iterations << " iterations" << std::endl;
 
@@ -140,13 +193,111 @@ void run_test()
     {
       msg.red = msg.red << 1;
       client_list[0]->send((char*)&msg, sizeof(msg));
-      std::this_thread::sleep_for(std::chrono::milliseconds(12));
+      std::this_thread::sleep_for(std::chrono::milliseconds(10));
+      client_list[0]->send((char*)&msg, sizeof(msg));
+      std::this_thread::sleep_for(std::chrono::milliseconds(27));
+    }
+
+    msg.red = 0x01;
+    msg.green = 0x01;
+    msg.blue = 0x01;
+
+    for(uint8_t red_count = 0; red_count < 7; red_count++)
+    {
+      msg.green = msg.green << 1;
+      std::this_thread::sleep_for(std::chrono::milliseconds(10));
+      client_list[0]->send((char*)&msg, sizeof(msg));
+      std::this_thread::sleep_for(std::chrono::milliseconds(27));
+    }
+
+    msg.red = 0x01;
+    msg.green = 0x01;
+    msg.blue = 0x01;
+
+    for(uint8_t red_count = 0; red_count < 7; red_count++)
+    {
+      msg.blue = msg.blue << 1;
+      std::this_thread::sleep_for(std::chrono::milliseconds(10));
+      client_list[0]->send((char*)&msg, sizeof(msg));
+      std::this_thread::sleep_for(std::chrono::milliseconds(27));
+    }
+
+  }
+
+  std::cout << "Finishing streaming" << std::endl;
+
+  std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+
+  /* Ending streaming mode */
+  msg.msgID = 0x03;
+  client_list[0]->send((char*)&msg, sizeof(msg));
+
+  delete client_0;
+
+}
+
+
+
+void run_test()
+{
+
+  /* Do synchronization */
+  //run_sync();
+
+  std::cout << "Synchronization done. Waiting 1 second" << std::endl;
+
+  std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+
+  //udp_server server("192.168.2.122",7001);
+  std::vector<udp_client*> client_list;
+  //client_list.push_back(std::make_unique<udp_client>(udp_client("192.168.2.122",7001)));
+  //client_list.push_back(udp_client("192.168.2.122",7001));
+  //auto client_test = std::make_unique<udp_client>(udp_client("192.168.2.122",7001));
+  udp_client* client_0 = new udp_client("192.168.2.106",7001);
+  udp_client* client_1 = new udp_client("192.168.2.111",7001);
+  udp_client* client_2 = new udp_client("192.168.2.113",7001);
+  client_list.push_back(client_0);
+  client_list.push_back(client_1);
+  client_list.push_back(client_2);
+
+  std::cout << "Created Client list" << std::endl;
+
+  udp_server server("192.168.2.120",7001);
+  std::cout << "Created Server" << std::endl;
+
+  color_request msg;
+  msg.msgID = 0x01;
+
+  uint32_t num_iterations = 100;
+
+  std::cout << "Starting streaming with " << num_iterations << " iterations" << std::endl;
+
+  uint8_t count_R = 0;
+  uint8_t count_G = 0;
+  uint8_t count_B = 0;
+
+  /* Send messages */
+  while(num_iterations > 0)
+  {
+
+    std::cout << "Iteration " << num_iterations << std::endl;
+    num_iterations--;
+
+    msg.red = 0x01;
+    msg.green = 0x01;
+    msg.blue = 0x01;
+
+    for(uint8_t red_count = 0; red_count < 7; red_count++)
+    {
+      msg.red = msg.red << 1;
+      client_list[0]->send((char*)&msg, sizeof(msg));
+      std::this_thread::sleep_for(std::chrono::milliseconds(2));
 
       client_list[1]->send((char*)&msg, sizeof(msg));
-      std::this_thread::sleep_for(std::chrono::milliseconds(12));
+      std::this_thread::sleep_for(std::chrono::milliseconds(2));
 
       client_list[2]->send((char*)&msg, sizeof(msg));
-      std::this_thread::sleep_for(std::chrono::milliseconds(120));
+      std::this_thread::sleep_for(std::chrono::milliseconds(35));
     }
 
     msg.red = 0x01;
@@ -157,13 +308,13 @@ void run_test()
     {
       msg.green = msg.green << 1;
       client_list[0]->send((char*)&msg, sizeof(msg));
-      std::this_thread::sleep_for(std::chrono::milliseconds(12));
+      std::this_thread::sleep_for(std::chrono::milliseconds(2));
 
       client_list[1]->send((char*)&msg, sizeof(msg));
-      std::this_thread::sleep_for(std::chrono::milliseconds(12));
+      std::this_thread::sleep_for(std::chrono::milliseconds(2));
 
       client_list[2]->send((char*)&msg, sizeof(msg));
-      std::this_thread::sleep_for(std::chrono::milliseconds(120));
+      std::this_thread::sleep_for(std::chrono::milliseconds(35));
     }
 
     msg.red = 0x01;
@@ -174,13 +325,13 @@ void run_test()
     {
       msg.blue = msg.blue << 1;
       client_list[0]->send((char*)&msg, sizeof(msg));
-      std::this_thread::sleep_for(std::chrono::milliseconds(12));
+      std::this_thread::sleep_for(std::chrono::milliseconds(2));
 
       client_list[1]->send((char*)&msg, sizeof(msg));
-      std::this_thread::sleep_for(std::chrono::milliseconds(12));
+      std::this_thread::sleep_for(std::chrono::milliseconds(2));
 
       client_list[2]->send((char*)&msg, sizeof(msg));
-      std::this_thread::sleep_for(std::chrono::milliseconds(120));
+      std::this_thread::sleep_for(std::chrono::milliseconds(35));
     }
 
   }
@@ -216,9 +367,11 @@ int main (int argc, const char *argv[])
   options_description desc{"Options"};
   desc.add_options()
     ("help,h", "Help screen")
-    ("text,t", value<std::string>(&text_given), "Text to translate to speech (TTS)")
     ("iterations,i", value<uint32_t>(), "Number of iterations")
     ("execution,e", "execution")
+    ("execution_multicast,a", "execution_multicast")
+    ("multicast,m", "multicast")
+    ("terminate,t", "terminate")
     ("sync,s", "Number of iterations");
 
   variables_map vm;
@@ -229,12 +382,6 @@ int main (int argc, const char *argv[])
   if (vm.count("help"))
   {
     std::cout << "Help" << '\n';
-  }
-
-  //If filename given, just play audio
-  else if(vm.count("text"))
-  {
-    std::cout << atoi(text_given.c_str()) << std::endl;
   }
 
   if (vm.count("iterations"))
@@ -251,6 +398,21 @@ int main (int argc, const char *argv[])
   {
     std::cout << "Running communication test" << std::endl;
     run_test();
+  }
+  else if (vm.count("multicast"))
+  {
+    std::cout << "Running multicast test" << std::endl;
+    run_multicast();
+  }
+  else if (vm.count("terminate"))
+  {
+    std::cout << "Stopping multicast test" << std::endl;
+    stop_multicast();
+  }
+  else if (vm.count("execution_multicast"))
+  {
+    std::cout << "Starting multicast sequence" << std::endl;
+    run_test_multicast();
   }
 
 
