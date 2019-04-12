@@ -69,7 +69,7 @@ void LEDController::feed()
     switch(m_mode)
     {
       case 2:
-        test_effect();
+        test_effect(m_lamp_status_request->effect_speed);
         break;
     }
   }
@@ -86,8 +86,20 @@ void LEDController::feed()
         m_static_effects->FadeInOut(m_lamp_status_request->color.R, m_lamp_status_request->color.G, m_lamp_status_request->color.B);
         break;
       case STROBE:
-        m_static_effects->Strobe(m_lamp_status_request->color.R, m_lamp_status_request->color.G, m_lamp_status_request->color.B,50, 30, 500);
+        m_static_effects->Strobe(m_lamp_status_request->color.R, m_lamp_status_request->color.G, m_lamp_status_request->color.B,50, m_lamp_status_request->effect_speed, m_lamp_status_request->effect_delay);
         break;
+      case FIRE:
+        m_static_effects->Fire(55, 120,m_lamp_status_request->effect_speed);
+        break;
+      case HALLOWEEN_EYES:
+        m_static_effects->HalloweenEyes(m_lamp_status_request->color.R, m_lamp_status_request->color.G, m_lamp_status_request->color.B, NUM_LEDS/5, 2, true, 1, m_lamp_status_request->effect_speed,  m_lamp_status_request->effect_delay);
+        break;         
+      case CYCLON_BOUNCE:
+        m_static_effects->CylonBounce(m_lamp_status_request->color.R, m_lamp_status_request->color.G, m_lamp_status_request->color.B, NUM_LEDS/5, m_lamp_status_request->effect_speed, m_lamp_status_request->effect_delay);
+        break;         
+      case NEW_KITT:
+        m_static_effects->NewKITT(m_lamp_status_request->color.R, m_lamp_status_request->color.G, m_lamp_status_request->color.B, NUM_LEDS/5, m_lamp_status_request->effect_speed, m_lamp_status_request->effect_delay);
+        break;         
       default:
         break;      
     }
@@ -116,11 +128,11 @@ void LEDController::end_effect()
   m_static_effects->end_effect();
 }
 
-void LEDController::test_effect()
+void LEDController::test_effect(uint32_t print_delay)
 {
   unsigned long now = m_timer.getTime();
 
-  if( ((now - m_last_iteration) > PRINT_DELAY) && (print_task == 0) )
+  if( ((now - m_last_iteration) > print_delay) && (print_task == 0) )
   {
     //Serial.println("Iteration ON due");
     m_last_iteration = now;
@@ -137,7 +149,7 @@ void LEDController::test_effect()
     }
   }
   
-  else if( ((now - m_last_iteration) > PRINT_DELAY) && (print_task == 1) )
+  else if( ((now - m_last_iteration) > print_delay) && (print_task == 1) )
   {
     //Serial.println("Iteration OFF due");
     m_last_iteration = now;

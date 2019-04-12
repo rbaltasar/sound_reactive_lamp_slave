@@ -34,6 +34,11 @@ private:
   void setPixel(int Pixel, byte red, byte green, byte blue);
   // Set all LEDs to a given color and apply it (visible)
   void setAll(byte red, byte green, byte blue);
+  void CenterToOutside(byte red, byte green, byte blue, int EyeSize, int SpeedDelay, int ReturnDelay);
+  void OutsideToCenter(byte red, byte green, byte blue, int EyeSize, int SpeedDelay, int ReturnDelay);
+  void LeftToRight(byte red, byte green, byte blue, int EyeSize, int SpeedDelay, int ReturnDelay);
+  void RightToLeft(byte red, byte green, byte blue, int EyeSize, int SpeedDelay, int ReturnDelay);
+  void setPixelHeatColor (int Pixel, byte temperature);
 
 public: 
 
@@ -44,10 +49,12 @@ public:
   void RGBLoop();
   void FadeInOut(byte red, byte green, byte blue);
   void Strobe(byte red, byte green, byte blue, int StrobeCount, int FlashDelay, int EndPause);
-#if 0
+  void Fire(int Cooling, int Sparking, int SpeedDelay);
   void HalloweenEyes(byte red, byte green, byte blue, int EyeWidth, int EyeSpace, bool Fade, int Steps, int FadeDelay, int EndPause);
   void CylonBounce(byte red, byte green, byte blue, int EyeSize, int SpeedDelay, int ReturnDelay);
   void NewKITT(byte red, byte green, byte blue, int EyeSize, int SpeedDelay, int ReturnDelay);
+
+#if 0
   void CenterToOutside(byte red, byte green, byte blue, int EyeSize, int SpeedDelay, int ReturnDelay);
   void OutsideToCenter(byte red, byte green, byte blue, int EyeSize, int SpeedDelay, int ReturnDelay);
   void LeftToRight(byte red, byte green, byte blue, int EyeSize, int SpeedDelay, int ReturnDelay);
@@ -61,8 +68,7 @@ public:
   void rainbowCycle(int SpeedDelay);
   byte * Wheel(byte WheelPos);
   void theaterChase(byte red, byte green, byte blue, int SpeedDelay);
-  void theaterChaseRainbow(int SpeedDelay);
-  void Fire(int Cooling, int Sparking, int SpeedDelay);
+  void theaterChaseRainbow(int SpeedDelay);  
   void setPixelHeatColor (int Pixel, byte temperature);
   void BouncingColoredBalls(int BallCount, byte colors[][3], bool continuous, const uint8_t background);
   void meteorRain(byte red, byte green, byte blue, byte meteorSize, byte meteorTrailDecay, bool meteorRandomDecay, int SpeedDelay, bool dir = true);

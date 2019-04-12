@@ -28,13 +28,19 @@ struct lamp_status
   uint8_t brightness;
   bool resync;
   bool streaming;
+  uint32_t effect_delay;
+  uint32_t effect_speed;
 };
 
 enum StaticMode
 {
   RGB_LOOP = 0,
   FADE_IN_OUT = 1,
-  STROBE = 2  
+  STROBE = 2,
+  FIRE = 3,
+  HALLOWEEN_EYES = 4,
+  CYCLON_BOUNCE = 5,
+  NEW_KITT = 6
 };
 
 #endif

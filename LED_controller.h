@@ -50,7 +50,7 @@ public:
   void setRGB(RGBcolor color);
   void setRGB(uint8_t R, uint8_t G, uint8_t B);
 
-  void test_effect();
+  void test_effect(uint32_t print_delay);
 
   void end_effect();
 

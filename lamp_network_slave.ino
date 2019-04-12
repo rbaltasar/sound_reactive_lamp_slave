@@ -59,6 +59,8 @@ void setup()
   status_request.color.R = 20;
   status_request.color.G = 20;
   status_request.color.B = 20;
+  status_request.effect_delay = 500;
+  status_request.effect_speed = 500;
   status_request.streaming = false;
 }
 
@@ -106,6 +108,9 @@ void setup_mqtt()
   client.subscribe("lamp_network/mode_request");
   client.subscribe("lamp_network/light_intensity");
   client.subscribe("lamp_network/light_color");
+  client.subscribe("lamp_network/effect_delay");
+  client.subscribe("lamp_network/effect_speed");
+  
 }
 
 void setup_hardware()
@@ -141,12 +146,29 @@ void callback(char* topic, byte* payload, unsigned int length) {
     status_request.lamp_mode = root["mode"];   
     Serial.println(status_request.lamp_mode);
   }
+  
   else if(strcmp(topic,"lamp_network/light_intensity") == 0)
   {
     int rcv = root["intensity"];
     status_request.brightness = rcv;
     Serial.println(rcv);
   }
+
+  else if(strcmp(topic,"lamp_network/effect_delay") == 0)
+  {
+    int rcv = root["delay"];
+    rcv = rcv * 10;
+    status_request.effect_delay = rcv; //Delay in ms
+    Serial.println(rcv);
+  }
+
+  else if(strcmp(topic,"lamp_network/effect_speed") == 0)
+  {
+    int rcv = root["speed"];
+    rcv = 1000 - 10 * rcv;
+    status_request.effect_speed = rcv; //Delay in ms
+    Serial.println(rcv);
+  }  
 
   else if(strcmp(topic,"lamp_network/light_color") == 0)
   {
@@ -178,6 +200,8 @@ void reconnect()
       client.subscribe("lamp_network/mode_request");
       client.subscribe("lamp_network/light_intensity");
       client.subscribe("lamp_network/light_color");
+      client.subscribe("lamp_network/effect_delay");
+      client.subscribe("lamp_network/effect_speed");
     }
     else
     {
@@ -244,7 +268,19 @@ void status_update()
       status_request.streaming = true;
       /* Go to lamp mode 2 to show a demo effect */
       status_request.lamp_mode = 2;
-    }    
+    }
+
+    /* Streaming request */
+    if(status_request.lamp_mode == 1)
+    {
+      Serial.println("ON request received");
+      status_request.color.R = 20;
+      status_request.color.G = 20;
+      status_request.color.B = 20;
+      status_request.effect_delay = 500;
+      status_request.effect_speed = 500;
+      status_request.streaming = false;
+    }
     
     Serial.print("Received change request to mode ");
     Serial.println(status_request.lamp_mode);
