@@ -42,6 +42,21 @@ LEDController LED_controller(&status_request);
 UDPHandler udp_handler(&status_request);
 
 String IPAddress_string;
+String MACAddress_string;
+const char* ota_url;
+
+enum system_state_var
+{
+  STARTUP = 0,
+  NORMAL = 1,
+  STREAMING = 2
+};
+
+system_state_var sysState;
+
+init_struct initState;
+
+uint8_t deviceID = 99;
 
 void setup()
 {
@@ -50,18 +65,31 @@ void setup()
   delay(10); 
 
   setup_wifi();
-  setup_OTA();
+  delay(10);
   setup_mqtt();
+  delay(100);
+  //setup_OTA();
+  //delay(100);
   setup_hardware();  
+
+  sysState = STARTUP;
 
   /* Initial configuration of the lamp when the system is booted */
   status_request.lamp_mode = 1;
-  status_request.color.R = 20;
-  status_request.color.G = 20;
-  status_request.color.B = 20;
-  status_request.effect_delay = 500;
-  status_request.effect_speed = 500;
+  status_request.color.R = 0;
+  status_request.color.G = RGB_DEFAULT;
+  status_request.color.B = 0;
+  status_request.brightness = 1;
+  status_request.effect_delay = 50;
+  status_request.effect_speed = 50;
   status_request.streaming = false;
+
+  /* Configuration state */
+  initState.hasStarted = false;
+  initState.isCompleted = false;
+
+  /* Setup finished. Show leds */
+  LED_controller.setLeds(status_request.color,0,NUM_LEDS/3);
 }
 
 String IpAddress2String(const IPAddress& ipAddress)
@@ -92,6 +120,10 @@ void setup_wifi()
   Serial.println("Connection established!");
   Serial.print("IP address:\t");
   Serial.println(WiFi.localIP()); // Send the IP address of the ESP8266 to the computer
+  Serial.print("MAC address: ");
+  Serial.println(WiFi.macAddress());
+
+  MACAddress_string = WiFi.macAddress();
 
   /* Translate the IP address to String to have a unique name for MQTT client */
   IPAddress_string = IpAddress2String(WiFi.localIP());  
@@ -110,6 +142,7 @@ void setup_mqtt()
   client.subscribe("lamp_network/light_color");
   client.subscribe("lamp_network/effect_delay");
   client.subscribe("lamp_network/effect_speed");
+  client.subscribe("lamp_network/alive_response");
   
 }
 
@@ -120,7 +153,7 @@ void setup_hardware()
 
 void setup_OTA()
 {
-  updater.begin();
+  updater.begin(ota_url);
 }
 
 /* Configure the callback function for a subscribed MQTT topic */
@@ -150,6 +183,14 @@ void callback(char* topic, byte* payload, unsigned int length) {
   else if(strcmp(topic,"lamp_network/light_intensity") == 0)
   {
     int rcv = root["intensity"];
+
+    if(rcv == 0) rcv = 255;
+    
+    else
+    {
+      rcv = 11 - rcv;
+    }
+    
     status_request.brightness = rcv;
     Serial.println(rcv);
   }
@@ -183,6 +224,19 @@ void callback(char* topic, byte* payload, unsigned int length) {
     Serial.println(status_request.color.B);
 #endif
   }
+
+  else if(strcmp(topic,"lamp_network/alive_response") == 0)
+  {
+    const char* mac_request = root["mac_origin"];
+
+    if(strcmp(mac_request,MACAddress_string.c_str()) == 0)
+    {
+      deviceID = root["deviceID"];
+      ota_url = root["OTA_URL"];    
+    }
+    
+    initState.isCompleted = true;
+  } 
 }
 
 /* Reconnect to the MQTT broker */
@@ -202,6 +256,7 @@ void reconnect()
       client.subscribe("lamp_network/light_color");
       client.subscribe("lamp_network/effect_delay");
       client.subscribe("lamp_network/effect_speed");
+      client.subscribe("lamp_network/alive_response");
     }
     else
     {
@@ -209,7 +264,7 @@ void reconnect()
       Serial.print(client.state());
       Serial.println(" try again in 5 seconds");
       // Wait 5 seconds before retrying
-      delay(5000);
+      delay(500);
     }
   }  
 }
@@ -237,9 +292,11 @@ void streaming_loop()
     udp_handler.stop();
 
     status_request.lamp_mode = 1;
-    status_request.color.R = 20;
-    status_request.color.G = 20;
-    status_request.color.B = 20;
+    status_request.color.R = RGB_DEFAULT;
+    status_request.color.G = RGB_DEFAULT;
+    status_request.color.B = RGB_DEFAULT;
+
+    sysState = NORMAL;
   }
 
   if(status_request.resync == true)
@@ -266,6 +323,7 @@ void status_update()
       /* Start UDP socket */
       udp_handler.begin();
       status_request.streaming = true;
+      sysState = STREAMING;
       /* Go to lamp mode 2 to show a demo effect */
       status_request.lamp_mode = 2;
     }
@@ -274,19 +332,19 @@ void status_update()
     if(status_request.lamp_mode == 1)
     {
       Serial.println("ON request received");
-      status_request.color.R = 20;
-      status_request.color.G = 20;
-      status_request.color.B = 20;
-      status_request.effect_delay = 500;
-      status_request.effect_speed = 500;
+      status_request.color.R = RGB_DEFAULT;
+      status_request.color.G = RGB_DEFAULT;
+      status_request.color.B = RGB_DEFAULT;
+      status_request.effect_delay = 50;
+      status_request.effect_speed = 50;
       status_request.streaming = false;
     }
     
     Serial.print("Received change request to mode ");
     Serial.println(status_request.lamp_mode);
        
+    current_status.lamp_mode = status_request.lamp_mode; 
     LED_controller.update_mode();   
-    current_status.lamp_mode = status_request.lamp_mode;   
   }
 
   if(status_request.brightness != current_status.brightness)
@@ -295,7 +353,7 @@ void status_update()
     Serial.println(status_request.brightness);    
 
     current_status.brightness = status_request.brightness;  
-    LED_controller.update_brightness();
+    LED_controller.update_mode();
   }
 
   if(status_request.color.R != current_status.color.R || status_request.color.G != current_status.color.G || status_request.color.B != current_status.color.B)
@@ -315,25 +373,76 @@ void status_update()
   }
 }
 
+void initComm()
+{
+  /* Send a MQTT request */
+  if(!initState.hasStarted)
+  {
+    LED_controller.setLeds(status_request.color,0,(NUM_LEDS*2)/3);
+    client.publish("lamp_network/alive_request", MACAddress_string.c_str());
+    initState.hasStarted = true;
+    initState.elapsed_time = millis();
+  }
+
+  /* Wait asynchronously for the answer */
+  if(initState.hasStarted)
+  {
+    /* Check if answer was received */
+    if(initState.isCompleted)
+    {
+      sysState = NORMAL;
+      setup_OTA();
+      
+      LED_controller.setAllLeds(status_request.color,0);
+      delay(1000);
+      status_request.color.R = RGB_DEFAULT;
+      status_request.color.G = RGB_DEFAULT;
+      status_request.color.B = RGB_DEFAULT;
+      
+      Serial.print("Successfull communication setup. Device ID: ");
+      Serial.println(deviceID);
+
+      
+      
+      return;
+    }
+    /* Timeout. Show error and reset */
+    else if( (millis() - initState.elapsed_time) > initState.timeout )
+    {
+      status_request.color.R = RGB_DEFAULT;
+      status_request.color.G = 0;
+      status_request.color.B = 0;
+      LED_controller.setAllLeds(status_request.color,0);
+
+      Serial.println("Error in communication setup. Restarting ESP32");
+
+      delay(1000);
+
+      ESP.restart();
+    }
+  }
+}
+
 void loop()
 {
 
-  /* UDP streaming. Handle only UDP communication */
-  if(status_request.streaming)
+  switch(sysState)
   {
-    streaming_loop();    
+    case STARTUP:
+      network_loop();
+      initComm();
+      break;
+      
+    case NORMAL:
+      network_loop();
+      updater.OTA_handle();
+      status_update();
+      LED_controller.feed();   
+      break;
+      
+    case STREAMING:
+      streaming_loop();  
+      LED_controller.feed(); 
   }
-
-  /* No streaming. Handle MQTT and OTA */
-  else
-  {
-    network_loop();
-    updater.OTA_handle();
-    status_update();
-  
-  }
-
-  /* Feed the LED controller with the latest available info */
-  LED_controller.feed();   
     
 }

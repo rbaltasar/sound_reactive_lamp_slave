@@ -30,7 +30,7 @@ public:
 
   //virtual OTAUpdater() = 0;
   virtual void OTA_handle() = 0;
-  virtual void begin() = 0;
+  virtual void begin(const char* host_name) = 0;
   
 };
 

@@ -2,12 +2,22 @@
 #define COMON_DATATYPES_H
 
 
-struct sync_request {
+struct sync_request 
+{
   uint8_t msgID;
   uint8_t msgContent;
 };
 
-struct color_request {
+struct init_struct
+{
+  bool hasStarted;
+  bool isCompleted;
+  const unsigned long timeout = INIT_COMM_TIMEOUT;
+  unsigned long elapsed_time;
+};
+
+struct color_request 
+{
   uint8_t msgID;
   uint8_t red;
   uint8_t green;

@@ -11,9 +11,9 @@ server(80)
   
 }
 
-void OTAUpdater_ESP12::begin()
+void OTAUpdater_ESP12::begin(const char* host_name)
 {
-  MDNS.begin(host);
+  MDNS.begin(host_name);
     server.on("/", HTTP_GET, [this]() {
       server.sendHeader("Connection", "close");
       server.send(200, "text/html", serverIndex);
@@ -49,7 +49,7 @@ void OTAUpdater_ESP12::begin()
     server.begin();
     MDNS.addService("http", "tcp", 80);
 
-    Serial.printf("Ready! Open http://%s.local in your browser\n", host);
+    Serial.printf("Ready! Open http://%s.local in your browser\n", host_name);
 }
 
 void OTAUpdater_ESP12::OTA_handle()

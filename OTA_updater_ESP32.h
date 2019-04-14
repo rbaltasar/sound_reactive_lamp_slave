@@ -23,7 +23,6 @@ class OTAUpdater_ESP32: public OTAUpdater
 private:
 
   WebServer server;
-  const char* host = "esp32";
   
   /*
    * Login page
@@ -114,7 +113,7 @@ public:
 
   OTAUpdater_ESP32();
   void OTA_handle();
-  void begin();
+  void begin(const char* host_name);
   
 };
 

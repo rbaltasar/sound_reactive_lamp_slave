@@ -11,10 +11,10 @@ server(80)
   
 }
 
-void OTAUpdater_ESP32::begin()
+void OTAUpdater_ESP32::begin(const char* host_name)
 {
   /*use mdns for host name resolution*/
-  if (!MDNS.begin(host)) { //http://esp32.local
+  if (!MDNS.begin(host_name)) { //http://esp32.local
     Serial.println("Error setting up MDNS responder!");
     while (1) {
       delay(1000);
@@ -56,6 +56,8 @@ void OTAUpdater_ESP32::begin()
     }
   });
   server.begin();
+
+  Serial.printf("Ready! Open http://%s.local in your browser\n", host_name);
 }
 
 void OTAUpdater_ESP32::OTA_handle()

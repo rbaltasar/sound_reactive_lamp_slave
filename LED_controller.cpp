@@ -43,11 +43,24 @@ void LEDController::setup()
 
 void LEDController::setAllLeds(RGBcolor color, unsigned long delay_ms)
 {
-  for(uint8_t i = 0; i < NUM_LEDS; i++ )
+  setLeds(color,delay_ms,NUM_LEDS);
+}
+
+void LEDController::setLeds(RGBcolor color, unsigned long delay_ms, uint8_t num_leds, bool erase_others)
+{
+  for(uint8_t i = 0; i < num_leds; i++ )
   {
     m_leds[i] = CRGB(color.R, color.G, color.B);
     FastLED.show();
     delay(delay_ms); 
+  }
+  if(erase_others)
+  {
+    for(uint8_t i = num_leds; i < NUM_LEDS; i++ )
+    {
+      m_leds[i] = CRGB(0, 0, 0);
+    }
+    FastLED.show();
   }
 }
 
@@ -58,7 +71,10 @@ void LEDController::update_color()
   
 void LEDController::update_brightness()
 {
-  
+  if(m_mode == 1)
+  {
+    
+  }
 }
 
 void LEDController::feed()
@@ -118,7 +134,7 @@ void LEDController::update_mode()
       setRGB(0,0,0);
       break;
     case 1:
-      setRGB(20,20,20);
+      setRGB(m_lamp_status_request->color.R / m_lamp_status_request->brightness, m_lamp_status_request->color.G / m_lamp_status_request->brightness, m_lamp_status_request->color.B / m_lamp_status_request->brightness);
       break;
   }
 }

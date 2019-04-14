@@ -26,9 +26,6 @@ private:
   timeSync m_timer;
   unsigned long m_last_iteration = 0;
 
-  void setAllLeds(RGBcolor, unsigned long delay_ms);
-
-
   uint8_t led_idx = 0;
   uint8_t print_task = 0;
 
@@ -49,6 +46,8 @@ public:
 
   void setRGB(RGBcolor color);
   void setRGB(uint8_t R, uint8_t G, uint8_t B);
+  void setAllLeds(RGBcolor, unsigned long delay_ms);
+  void setLeds(RGBcolor, unsigned long delay_ms,uint8_t num_leds, bool erase_others = true);
 
   void test_effect(uint32_t print_delay);
 

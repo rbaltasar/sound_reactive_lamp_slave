@@ -21,8 +21,7 @@ class OTAUpdater_ESP12: public OTAUpdater
 
 private:
 
-  ESP8266WebServer server;
-  const char* host = "esp12";  
+  ESP8266WebServer server; 
 
   const char* serverIndex = "<form method='POST' action='/update' enctype='multipart/form-data'><input type='file' name='update'><input type='submit' value='Update'></form>";
 
@@ -30,7 +29,7 @@ public:
 
   OTAUpdater_ESP12();
   void OTA_handle();
-  void begin();
+  void begin(const char* host_name);
   
 };
 
