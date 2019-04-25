@@ -6,9 +6,10 @@
 #define HW_PLATFORM 1
 
 //Hardware configuration
-#define NUM_LEDS 10
+#define NUM_LEDS 60
 #define IR_PIN 8
 
+#define LED_BUILTIN 2
 
 #if HW_PLATFORM == 0
 # define LED_PIN 3
@@ -21,11 +22,13 @@
 
 #define PRINT_DELAY 37
 
-#define RGB_DEFAULT 20
+#define RGB_DEFAULT 100
 
 const char masterIP[] = "192.168.2.120";
 
 #define INIT_COMM_TIMEOUT 3000
+#define ALIVE_PERIOD 10000
+#define BLINK_PERIOD 2000
 
 //----------- Configuration -------------
 //LED configuration

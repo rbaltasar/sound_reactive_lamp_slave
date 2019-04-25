@@ -31,6 +31,7 @@ void LEDController::setRGB(uint8_t R, uint8_t G, uint8_t B)
   color_req.R = R;
   color_req.G = G;
   color_req.B = B;
+  
   setAllLeds(color_req,0);
 }
 
@@ -48,6 +49,9 @@ void LEDController::setAllLeds(RGBcolor color, unsigned long delay_ms)
 
 void LEDController::setLeds(RGBcolor color, unsigned long delay_ms, uint8_t num_leds, bool erase_others)
 {
+  color.R > 255 ? color.R = 255 : color.R = color.R;
+  color.G > 255 ? color.G = 255 : color.G = color.G;
+  color.B > 255 ? color.B = 255 : color.B = color.B;
   for(uint8_t i = 0; i < num_leds; i++ )
   {
     m_leds[i] = CRGB(color.R, color.G, color.B);
