@@ -116,10 +116,7 @@ void LEDController::feed()
         break;         
       case CYCLON_BOUNCE:
         m_static_effects->CylonBounce(m_lamp_status_request->color.R, m_lamp_status_request->color.G, m_lamp_status_request->color.B, NUM_LEDS/5, m_lamp_status_request->effect_speed, m_lamp_status_request->effect_delay);
-        break;         
-      case NEW_KITT:
-        m_static_effects->NewKITT(m_lamp_status_request->color.R, m_lamp_status_request->color.G, m_lamp_status_request->color.B, NUM_LEDS/5, m_lamp_status_request->effect_speed, m_lamp_status_request->effect_delay);
-        break;         
+        break;                
       default:
         break;      
     }

@@ -31,7 +31,7 @@ const char* mqtt_server = "192.168.2.118";
 /* Communication settings */
 WiFiClient espClient;
 PubSubClient client(espClient);
-DynamicJsonBuffer jsonBuffer(100);
+DynamicJsonBuffer jsonBuffer(250);
 
 lamp_status current_status;
 lamp_status status_request;
