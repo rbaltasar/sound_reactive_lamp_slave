@@ -116,7 +116,24 @@ void LEDController::feed()
         break;         
       case CYCLON_BOUNCE:
         m_static_effects->CylonBounce(m_lamp_status_request->color.R, m_lamp_status_request->color.G, m_lamp_status_request->color.B, NUM_LEDS/5, m_lamp_status_request->effect_speed, m_lamp_status_request->effect_delay);
-        break;                
+        break;
+        #if 0
+      case TWINKLE:
+        m_static_effects->Twinkle(m_lamp_status_request->color.R, m_lamp_status_request->color.G, m_lamp_status_request->color.B, 16, m_lamp_status_request->effect_speed, false);
+        break;
+      case TWINKLE_RANDOM:
+        m_static_effects->TwinkleRandom(16, m_lamp_status_request->effect_speed, false);
+        break;
+      case SPARKLE:
+        m_static_effects->Sparkle(m_lamp_status_request->color.R, m_lamp_status_request->color.G, m_lamp_status_request->color.B, m_lamp_status_request->effect_speed);
+        break;
+      case SNOW_SPARKLE:
+        m_static_effects->SnowSparkle(m_lamp_status_request->color.R, m_lamp_status_request->color.G, m_lamp_status_request->color.B, m_lamp_status_request->effect_speed / 2, m_lamp_status_request->effect_speed);
+        break;
+      case RUNNING_LIGHTS:
+        m_static_effects->RunningLights(m_lamp_status_request->color.G, m_lamp_status_request->color.G, m_lamp_status_request->color.B, m_lamp_status_request->effect_speed);
+        break;    
+        #endif        
       default:
         break;      
     }
