@@ -40,6 +40,7 @@ struct lamp_status
   bool streaming;
   uint32_t effect_delay;
   uint32_t effect_speed;
+  uint32_t effect_amount;
 };
 
 enum StaticMode

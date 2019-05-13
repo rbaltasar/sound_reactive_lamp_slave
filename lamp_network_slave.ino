@@ -94,6 +94,7 @@ void setup()
   status_request.effect_delay = 50;
   status_request.effect_speed = 50;
   status_request.streaming = false;
+  status_request.effect_amount = 1;
 
   current_status = status_request;
 
@@ -265,6 +266,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
     if(!is_targeted_device(root["id_mask"])) return;
     
     int rcv = root["delay"];
+    status_request.effect_amount = rcv;
     rcv = rcv * 10;
     status_request.effect_delay = rcv; //Delay in ms
     Serial.println(rcv);

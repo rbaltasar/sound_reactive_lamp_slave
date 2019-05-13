@@ -17,13 +17,13 @@ class LEDController;
 
 struct bouncing_mem_struct
 {
-  float* ImpactVelocity;
-  float* TimeSinceLastBounce;
-  int*   Position;
-  long*  ClockTimeSinceLastBounce;
-  float* Dampening;
-  bool*  ballBouncing;
-  int*   Height;
+  float* ImpactVelocity = NULL;
+  float* TimeSinceLastBounce = NULL;
+  int*   Position = NULL;
+  long*  ClockTimeSinceLastBounce = NULL;
+  float* Dampening = NULL;
+  bool*  ballBouncing = NULL;
+  int*   Height = NULL;
 };
 
 class LEDStaticEffects

@@ -117,7 +117,6 @@ void LEDController::feed()
       case CYCLON_BOUNCE:
         m_static_effects->CylonBounce(m_lamp_status_request->color.R, m_lamp_status_request->color.G, m_lamp_status_request->color.B, NUM_LEDS/5, m_lamp_status_request->effect_speed, m_lamp_status_request->effect_delay);
         break;
-        #if 0
       case TWINKLE:
         m_static_effects->Twinkle(m_lamp_status_request->color.R, m_lamp_status_request->color.G, m_lamp_status_request->color.B, 16, m_lamp_status_request->effect_speed, false);
         break;
@@ -128,12 +127,41 @@ void LEDController::feed()
         m_static_effects->Sparkle(m_lamp_status_request->color.R, m_lamp_status_request->color.G, m_lamp_status_request->color.B, m_lamp_status_request->effect_speed);
         break;
       case SNOW_SPARKLE:
-        m_static_effects->SnowSparkle(m_lamp_status_request->color.R, m_lamp_status_request->color.G, m_lamp_status_request->color.B, m_lamp_status_request->effect_speed / 2, m_lamp_status_request->effect_speed);
+        m_static_effects->SnowSparkle(m_lamp_status_request->color.R, m_lamp_status_request->color.G, m_lamp_status_request->color.B, m_lamp_status_request->effect_speed, m_lamp_status_request->effect_delay);
         break;
       case RUNNING_LIGHTS:
-        m_static_effects->RunningLights(m_lamp_status_request->color.G, m_lamp_status_request->color.G, m_lamp_status_request->color.B, m_lamp_status_request->effect_speed);
-        break;    
-        #endif        
+        m_static_effects->RunningLights(m_lamp_status_request->color.R, m_lamp_status_request->color.G, m_lamp_status_request->color.B, m_lamp_status_request->effect_speed);
+        break;
+      case COLOR_WIPE:
+        m_static_effects->colorWipe(m_lamp_status_request->color.R, m_lamp_status_request->color.G, m_lamp_status_request->color.B, m_lamp_status_request->effect_speed);
+         break;
+      case RAINBOW_CYCLE:
+         m_static_effects->rainbowCycle(m_lamp_status_request->effect_speed);
+         break;
+      case THEATER_CHASE:
+         m_static_effects->theaterChase(m_lamp_status_request->color.R, m_lamp_status_request->color.G, m_lamp_status_request->color.B, m_lamp_status_request->effect_speed);
+         break;
+      case THEATER_CHASE_RAINBOW:
+         m_static_effects->theaterChaseRainbow(m_lamp_status_request->effect_speed);
+         break;
+      case BOUNCING_COLORED_BALLS:
+         static byte color[10][3] = { {m_lamp_status_request->color.R, m_lamp_status_request->color.G, m_lamp_status_request->color.R},
+                                    {m_lamp_status_request->color.G, m_lamp_status_request->color.B, m_lamp_status_request->color.R},
+                                    {m_lamp_status_request->color.B, m_lamp_status_request->color.R, m_lamp_status_request->color.G},
+                                    {m_lamp_status_request->color.R, m_lamp_status_request->color.R, m_lamp_status_request->color.G},
+                                    {m_lamp_status_request->color.G, m_lamp_status_request->color.G, m_lamp_status_request->color.R},
+                                    {m_lamp_status_request->color.R, m_lamp_status_request->color.G, m_lamp_status_request->color.R},
+                                    {m_lamp_status_request->color.B, m_lamp_status_request->color.B, m_lamp_status_request->color.G},
+                                    {m_lamp_status_request->color.R, m_lamp_status_request->color.G, m_lamp_status_request->color.R},
+                                    {m_lamp_status_request->color.G, m_lamp_status_request->color.B, m_lamp_status_request->color.G},
+                                    {m_lamp_status_request->color.R, m_lamp_status_request->color.B, m_lamp_status_request->color.B}};
+         break;
+      case METEOR_RAIN:
+         m_static_effects->meteorRain(m_lamp_status_request->color.R, m_lamp_status_request->color.G, m_lamp_status_request->color.B, m_lamp_status_request->effect_amount, m_lamp_status_request->effect_amount / 2, true, m_lamp_status_request->effect_speed);
+         break;
+      case FADE_TO_BLACK:
+         m_static_effects->fadeToBlack(20/*int ledNo*/, 0x0F/*byte fadeValue*/);
+         break;
       default:
         break;      
     }

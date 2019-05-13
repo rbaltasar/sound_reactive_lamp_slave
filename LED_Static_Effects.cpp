@@ -764,8 +764,9 @@ void LEDStaticEffects::theaterChaseRainbow(int SpeedDelay)
     j = 0;
   }
 
-  m_effect_state[0] = q;
-  m_effect_state[1] = order;
+  m_effect_state[0] = j;
+  m_effect_state[1] = q;
+  m_effect_state[2] = order;
 }
 
 bouncing_mem_struct* LEDStaticEffects::allocate_bouncing_mem(int BallCount)
@@ -810,6 +811,13 @@ void LEDStaticEffects::deallocate_bouncing_mem()
     delete [] m_bouncing_mem.ballBouncing;
     delete [] m_bouncing_mem.Height;
   }
+  m_bouncing_mem.ImpactVelocity = NULL;
+  m_bouncing_mem.TimeSinceLastBounce = NULL;
+  m_bouncing_mem.Position = NULL;
+  m_bouncing_mem.ClockTimeSinceLastBounce = NULL;
+  m_bouncing_mem.Dampening = NULL;
+  m_bouncing_mem.ballBouncing = NULL;
+  m_bouncing_mem.Height = NULL;
 }
 
 bouncing_mem_struct* LEDStaticEffects::get_bouncing_mem()
