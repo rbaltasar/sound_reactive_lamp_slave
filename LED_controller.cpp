@@ -145,7 +145,8 @@ void LEDController::feed()
          m_static_effects->theaterChaseRainbow(m_lamp_status_request->effect_speed);
          break;
       case BOUNCING_COLORED_BALLS:
-         static byte color[10][3] = { {m_lamp_status_request->color.R, m_lamp_status_request->color.G, m_lamp_status_request->color.R},
+      {
+         byte color[10][3] = { {m_lamp_status_request->color.R, m_lamp_status_request->color.G, m_lamp_status_request->color.B},
                                     {m_lamp_status_request->color.G, m_lamp_status_request->color.B, m_lamp_status_request->color.R},
                                     {m_lamp_status_request->color.B, m_lamp_status_request->color.R, m_lamp_status_request->color.G},
                                     {m_lamp_status_request->color.R, m_lamp_status_request->color.R, m_lamp_status_request->color.G},
@@ -155,7 +156,9 @@ void LEDController::feed()
                                     {m_lamp_status_request->color.R, m_lamp_status_request->color.G, m_lamp_status_request->color.R},
                                     {m_lamp_status_request->color.G, m_lamp_status_request->color.B, m_lamp_status_request->color.G},
                                     {m_lamp_status_request->color.R, m_lamp_status_request->color.B, m_lamp_status_request->color.B}};
+         m_static_effects->BouncingColoredBalls(m_lamp_status_request->effect_amount, color, true, 2);
          break;
+      }
       case METEOR_RAIN:
          m_static_effects->meteorRain(m_lamp_status_request->color.R, m_lamp_status_request->color.G, m_lamp_status_request->color.B, m_lamp_status_request->effect_amount, m_lamp_status_request->effect_amount / 2, true, m_lamp_status_request->effect_speed);
          break;

@@ -786,7 +786,7 @@ bouncing_mem_struct* LEDStaticEffects::allocate_bouncing_mem(int BallCount)
     m_bouncing_mem.ClockTimeSinceLastBounce = new long[BallCount];
     m_bouncing_mem.Dampening = new float[BallCount];
     m_bouncing_mem.ballBouncing = new bool[BallCount];
-    m_bouncing_mem.Height = new int[BallCount];
+    m_bouncing_mem.Height = new float[BallCount];
   }
 
   return &m_bouncing_mem;
@@ -835,9 +835,24 @@ void LEDStaticEffects::BouncingColoredBalls(int BallCount, byte colors[][3], boo
   bouncing_mem_struct* bouncing_mem;
   if(start_sequence)
   {
+    //Serial.println(BallCount);
     ballsStillBouncing = 1;
     /* Allocate memory */
     bouncing_mem = allocate_bouncing_mem(BallCount);
+    start_sequence = false;
+    /* Initialize memory */
+    for (int i = 0 ; i < BallCount ; i++)
+    {
+      bouncing_mem->ClockTimeSinceLastBounce[i] = millis();
+      bouncing_mem->Height[i] = StartHeight;
+      //Serial.println(StartHeight);
+      //Serial.println(bouncing_mem->Height[i]);
+      bouncing_mem->Position[i] = 0;
+      bouncing_mem->ImpactVelocity[i] = ImpactVelocityStart;
+      bouncing_mem->TimeSinceLastBounce[i] = 0;
+      bouncing_mem->Dampening[i] = 0.90 - float(i)/pow(BallCount,2);
+      bouncing_mem->ballBouncing[i]=true;
+    }
   }
   else
   {
@@ -858,12 +873,13 @@ void LEDStaticEffects::BouncingColoredBalls(int BallCount, byte colors[][3], boo
       bouncing_mem->Dampening[i] = 0.90 - float(i)/pow(BallCount,2);
       bouncing_mem->ballBouncing[i]=true;
     }
+    ballsStillBouncing = 1;
   }
 
   for (int i = 0 ; i < BallCount ; i++) {
     bouncing_mem->TimeSinceLastBounce[i] =  millis() - bouncing_mem->ClockTimeSinceLastBounce[i];
     bouncing_mem->Height[i] = 0.5 * Gravity * pow( bouncing_mem->TimeSinceLastBounce[i]/1000 , 2.0 ) + bouncing_mem->ImpactVelocity[i] * bouncing_mem->TimeSinceLastBounce[i]/1000;
-
+    
     if ( bouncing_mem->Height[i] < 0 ) {
       bouncing_mem->Height[i] = 0;
       bouncing_mem->ImpactVelocity[i] = bouncing_mem->Dampening[i] * bouncing_mem->ImpactVelocity[i];
@@ -892,7 +908,6 @@ void LEDStaticEffects::BouncingColoredBalls(int BallCount, byte colors[][3], boo
   setAll(background,background,background);
 
   m_effect_state[0] = ballsStillBouncing;
-
 }
 
 void LEDStaticEffects::meteorRain(byte red, byte green, byte blue, byte meteorSize, byte meteorTrailDecay, bool meteorRandomDecay, int SpeedDelay, bool dir)

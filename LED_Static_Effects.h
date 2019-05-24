@@ -23,7 +23,7 @@ struct bouncing_mem_struct
   long*  ClockTimeSinceLastBounce = NULL;
   float* Dampening = NULL;
   bool*  ballBouncing = NULL;
-  int*   Height = NULL;
+  float*   Height = NULL;
 };
 
 class LEDStaticEffects
