@@ -32,6 +32,7 @@ const char* mqtt_server = "192.168.2.118";
 WiFiClient espClient;
 PubSubClient client(espClient);
 DynamicJsonBuffer jsonBuffer(250);
+uint8_t mqtt_reconnect_counter = 0;
 
 lamp_status current_status;
 lamp_status status_request;
@@ -321,7 +322,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
 void reconnect()
 {
   // Loop until we're reconnected
-  while (!client.connected())
+  if (!client.connected())
   {
     Serial.print("Attempting MQTT connection...");
     // Attempt to connect
@@ -336,6 +337,8 @@ void reconnect()
       client.subscribe("lamp_network/effect_speed");
       client.subscribe("lamp_network/alive_rx");
       client.subscribe("lamp_network/initcommrx");
+
+      mqtt_reconnect_counter = 0;
     }
     else
     {
@@ -344,6 +347,8 @@ void reconnect()
       Serial.println(" try again in 5 seconds");
       // Wait 5 seconds before retrying
       delay(500);
+
+      if(++mqtt_reconnect_counter > 10)  ESP.restart();
     }
   }  
 }
@@ -581,7 +586,4 @@ void loop()
       streaming_loop();  
       LED_controller.feed(); 
   }
-
-  //blink_sm();
-    
 }
