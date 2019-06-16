@@ -1,6 +1,26 @@
 #if !defined COMON_DATATYPES_H
 #define COMON_DATATYPES_H
 
+/* Logical states */
+template <typename T>
+struct state_tracker
+{
+  T val;
+  T old;
+};
+
+enum system_state_var
+{
+  STARTUP = 0,
+  NORMAL = 1,
+  STREAMING = 2
+};
+
+enum COMM_TYPE
+{
+  MQTT = 0,
+  UDP = 1
+};
 
 struct sync_request 
 {
@@ -36,11 +56,16 @@ struct lamp_status
   uint8_t lamp_mode;
   RGBcolor color;
   uint8_t brightness;
-  bool resync;
-  bool streaming;
+  uint8_t deviceID;
   uint32_t effect_delay;
   uint32_t effect_speed;
   uint32_t effect_amount;
+  bool light_amount;
+  String IPAddress_string;
+  String MACAddress_string;
+  const char* ota_url;
+  system_state_var sysState;
+  init_struct initState;
 };
 
 enum StaticMode

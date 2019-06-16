@@ -48,13 +48,13 @@ void UDPHandler::begin()
             if(m_message[0] == 0x02)
             {
               /* Do synchronization */
-              synchronize(0);
+             // synchronize(0);
             }
 
             else if(m_message[0] == 0x03)
             {
               /* Do synchronization */
-              m_lamp_status_request->streaming = false;
+             // m_lamp_status_request->streaming = false;
             }
 
             else if(m_message[0] == 0x01)
@@ -92,7 +92,7 @@ void UDPHandler::synchronize(unsigned long delay_ms)
   //m_UDP.endPacket();  
 
   /* Indicate that resynchronization has been done */
-  m_lamp_status_request->resync = true;
+  //m_lamp_status_request->resync = true;
   
 }
 

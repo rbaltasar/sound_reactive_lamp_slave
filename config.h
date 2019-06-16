@@ -22,13 +22,14 @@
 
 #define PRINT_DELAY 37
 
-#define RGB_DEFAULT 100
+#define R_DEFAULT 255
+#define G_DEFAULT 218
+#define B_DEFAULT 107
 
 const char masterIP[] = "192.168.2.120";
 
-#define INIT_COMM_TIMEOUT 3000
-#define ALIVE_PERIOD 10000
-#define BLINK_PERIOD 2000
+#define INIT_COMM_TIMEOUT 6000
+#define ALIVE_PERIOD 30000
 
 //----------- Configuration -------------
 //LED configuration

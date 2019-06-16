@@ -1,72 +1,25 @@
 
 #include <rom/rtc.h>
 #include "timeSync.h"
-
-#if HW_PLATFORM == 0
-# include <ESP8266WiFi.h>
-# include "OTA_updater_ESP12.h"
-#elif HW_PLATFORM == 1
 # include <WiFi.h>
-# include "OTA_updater_ESP32.h"
-#endif
-
-#include <PubSubClient.h>
-#include <ArduinoJson.h>
 #include "LED_controller.h"
 #include "UDPHandler.h"
+#include "OTA_updater_ESP32.h"
+#include "MQTTHandler.h"
+#include "network_credentials.h"
 
-#if HW_PLATFORM == 0
-OTAUpdater_ESP12 updater;
-#elif HW_PLATFORM == 1
 OTAUpdater_ESP32 updater;
-#endif
 
-/* Network settings */
-const char *ssid = "WLAN-4B5A8F"; // The SSID (name) of the Wi-Fi network you want to connect to
-const char *password = "34620549741972173367";  // The password of the Wi-Fi network
+state_tracker<lamp_status> lamp_state;
 
-/* MQTT settings */
-const char* mqtt_server = "192.168.2.118";
+LEDController LED_controller(&lamp_state.val);
 
-/* Communication settings */
-WiFiClient espClient;
-PubSubClient client(espClient);
-DynamicJsonBuffer jsonBuffer(250);
-uint8_t mqtt_reconnect_counter = 0;
-
-lamp_status current_status;
-lamp_status status_request;
-
-unsigned long last_alive_tx = 0;
-unsigned long last_alive_rx = 0;
-unsigned long last_blink = 0;
-bool blink_on = true;
-
-RGBcolor actualColor;
-
-LEDController LED_controller(&status_request);
-
-UDPHandler udp_handler(&status_request);
-
-String IPAddress_string;
-String MACAddress_string;
-const char* ota_url;
-
-enum system_state_var
-{
-  STARTUP = 0,
-  NORMAL = 1,
-  STREAMING = 2
-};
-
-system_state_var sysState;
-
-init_struct initState;
-
-uint8_t deviceID = 99;
+UDPHandler udp_handler(&lamp_state.val);
 
 RESET_REASON reset_reason_0;
 RESET_REASON reset_reason_1;
+
+CommunicationHandler* communication_handler;
 
 void setup()
 {
@@ -79,32 +32,35 @@ void setup()
 
   setup_wifi();
   delay(100);
-  setup_mqtt();
-  delay(200);
-  //setup_OTA();
-  //delay(100);
+  communication_handler = new MQTTHandler(&lamp_state.val);
+  delay(200);  
   setup_hardware();  
 
-  sysState = STARTUP;
+  lamp_state.val.sysState = STARTUP;
 
   /* Initial configuration of the lamp when the system is booted */
-  status_request.color.R = 0;
-  status_request.color.G = RGB_DEFAULT;
-  status_request.color.B = 0;
-  status_request.brightness = 1;
-  status_request.effect_delay = 50;
-  status_request.effect_speed = 50;
-  status_request.streaming = false;
-  status_request.effect_amount = 1;
+  lamp_state.val.color.R = 0;
+  lamp_state.val.color.G = G_DEFAULT;
+  lamp_state.val.color.B = 0;
+  lamp_state.val.brightness = 1;
+  lamp_state.val.effect_delay = 50;
+  lamp_state.val.effect_speed = 50; 
+  lamp_state.val.effect_amount = 1;
 
-  current_status = status_request;
+  lamp_state.old.color.R = 0;
+  lamp_state.old.color.G = G_DEFAULT;
+  lamp_state.old.color.B = 0;
+  lamp_state.old.brightness = 1;
+  lamp_state.old.effect_delay = 50;
+  lamp_state.old.effect_speed = 50; 
+  lamp_state.old.effect_amount = 1;
 
   /* Configuration state */
-  initState.hasStarted = false;
-  initState.isCompleted = false;
+  lamp_state.val.initState.hasStarted = false;
+  lamp_state.val.initState.isCompleted = false;
 
   /* Setup finished. Show leds */
-  LED_controller.setLeds(status_request.color,0,NUM_LEDS/3);
+  LED_controller.setLeds(lamp_state.val.color,0,NUM_LEDS/3);
 }
 
 String IpAddress2String(const IPAddress& ipAddress)
@@ -174,27 +130,10 @@ void setup_wifi()
   Serial.print("MAC address: ");
   Serial.println(WiFi.macAddress());
 
-  MACAddress_string = WiFi.macAddress();
+  lamp_state.val.MACAddress_string = WiFi.macAddress();
 
   /* Translate the IP address to String to have a unique name for MQTT client */
-  IPAddress_string = IpAddress2String(WiFi.localIP());  
-  
-}
-
-void setup_mqtt()
-{
-  /* Define MQTT broker */
-  client.setServer(mqtt_server, 1883);
-  /* Define callback function */
-  client.setCallback(callback);
-  /* Subscribe to topics */
-  client.subscribe("lamp_network/mode_request");
-  client.subscribe("lamp_network/light_intensity");
-  client.subscribe("lamp_network/light_color");
-  client.subscribe("lamp_network/effect_delay");
-  client.subscribe("lamp_network/effect_speed");
-  client.subscribe("lamp_network/alive_rx");
-  client.subscribe("lamp_network/initcommrx");
+  lamp_state.val.IPAddress_string = IpAddress2String(WiFi.localIP());  
   
 }
 
@@ -206,174 +145,11 @@ void setup_hardware()
 
 void setup_OTA()
 {
-  updater.begin(ota_url);
+  updater.begin(lamp_state.val.ota_url);
 }
 
-bool is_targeted_device(uint8_t req_id_mask)
-{
-  uint8_t device_mask = 1 << deviceID;
 
-  if( (device_mask & req_id_mask) != 0u ) return true;
-  else return false;
-}
-
-/* Configure the callback function for a subscribed MQTT topic */
-void callback(char* topic, byte* payload, unsigned int length) {
-
-  /* Print message (debugging only) */
-#if 1
-  Serial.print("Message arrived [");
-  Serial.print(topic);
-  Serial.print("] ");
-  for (int i = 0; i < length; i++) {
-    Serial.print((char)payload[i]);
-  }
-  Serial.println();
-#endif
-
-  /* Parse JSON object */
-  JsonObject& root = jsonBuffer.parseObject(payload);
-
-  /* Filter for topics */
-  if( strcmp(topic,"lamp_network/mode_request") == 0 )
-  {
-    if(!is_targeted_device(root["id_mask"])) return;
-    
-    status_request.lamp_mode = root["mode"];   
-    Serial.println(status_request.lamp_mode);
-  }
-  
-  else if(strcmp(topic,"lamp_network/light_intensity") == 0)
-  {
-
-    if(!is_targeted_device(root["id_mask"])) return;
-    
-    int rcv = root["intensity"];
-
-    if(rcv == 0) rcv = 255;
-    
-    else
-    {
-      rcv = 11 - rcv;
-    }
-    
-    status_request.brightness = rcv;
-    Serial.println(rcv);
-  }
-
-  else if(strcmp(topic,"lamp_network/effect_delay") == 0)
-  {
-
-    if(!is_targeted_device(root["id_mask"])) return;
-    
-    int rcv = root["delay"];
-    status_request.effect_amount = rcv;
-    rcv = rcv * 10;
-    status_request.effect_delay = rcv; //Delay in ms
-    Serial.println(rcv);
-  }
-
-  else if(strcmp(topic,"lamp_network/effect_speed") == 0)
-  {
-    if(!is_targeted_device(root["id_mask"])) return;
-    
-    int rcv = root["speed"];
-    rcv = 1000 - 10 * rcv;
-    status_request.effect_speed = rcv; //Delay in ms
-    Serial.println(rcv);
-  }  
-
-  else if(strcmp(topic,"lamp_network/light_color") == 0)
-  {
-    if(!is_targeted_device(root["id_mask"])) return;
-    
-    status_request.color.R = root["R"];
-    status_request.color.G = root["G"];
-    status_request.color.B = root["B"];
-
-    // Output to serial monitor
-#if 1
-    Serial.println(status_request.color.R);
-    Serial.println(status_request.color.G);
-    Serial.println(status_request.color.B);
-#endif
-  }
-
-  else if(strcmp(topic,"lamp_network/initcommrx") == 0)
-  {
-    const char* mac_request = root["mac_origin"];
-
-    if(strcmp(mac_request,MACAddress_string.c_str()) == 0)
-    {
-      deviceID = root["deviceID"];
-      ota_url = root["OTA_URL"];
-      status_request.lamp_mode = root["mode"];    
-    }
-    
-    initState.isCompleted = true;
-  }
-  else if(strcmp(topic,"lamp_network/alive_rx") == 0)
-  {
-    last_alive_rx = millis();
-  }
-}
-
-/* Reconnect to the MQTT broker */
-void reconnect()
-{
-  // Loop until we're reconnected
-  if (!client.connected())
-  {
-    Serial.print("Attempting MQTT connection...");
-    // Attempt to connect
-    if (client.connect(IPAddress_string.c_str())) //Unique name for each instance of a slave
-    {
-      Serial.println("connected");
-      //Resubscribe
-      client.subscribe("lamp_network/mode_request");
-      client.subscribe("lamp_network/light_intensity");
-      client.subscribe("lamp_network/light_color");
-      client.subscribe("lamp_network/effect_delay");
-      client.subscribe("lamp_network/effect_speed");
-      client.subscribe("lamp_network/alive_rx");
-      client.subscribe("lamp_network/initcommrx");
-
-      mqtt_reconnect_counter = 0;
-    }
-    else
-    {
-      Serial.print("failed, rc=");
-      Serial.print(client.state());
-      Serial.println(" try again in 5 seconds");
-      // Wait 5 seconds before retrying
-      delay(500);
-
-      if(++mqtt_reconnect_counter > 10)  ESP.restart();
-    }
-  }  
-}
-
-void network_loop()
-{
-  /* MQTT loop */
-  if (!client.connected()) reconnect();
-  client.loop();
-
-  unsigned long now = millis(); 
-
-  if( (now - last_alive_tx)> ALIVE_PERIOD)
-  {   
-    client.publish("lamp_network/alive_tx", String(deviceID).c_str());
-    last_alive_tx = now;
-  }
-
-  if( (now - last_alive_rx)> (2*ALIVE_PERIOD))
-  {   
-    Serial.println("Lost MQTT connection. Reboot");
-    ESP.restart();
-  }
-}
-
+#if 0
 void streaming_loop()
 {
     
@@ -385,9 +161,9 @@ void streaming_loop()
     udp_handler.stop();
 
     status_request.lamp_mode = 1;
-    status_request.color.R = RGB_DEFAULT;
-    status_request.color.G = RGB_DEFAULT;
-    status_request.color.B = RGB_DEFAULT;
+    status_request.color.R = R_DEFAULT;
+    status_request.color.G = G_DEFAULT;
+    status_request.color.B = B_DEFAULT;
 
     sysState = NORMAL;
   }
@@ -399,134 +175,123 @@ void streaming_loop()
     status_request.resync = false;
   }  
 }
+#endif
+
+void mode_update()
+{
+  /* Finish previous effect */
+  LED_controller.end_effect();
+  
+  /* Streaming request */
+  if(lamp_state.val.lamp_mode == 3)
+  {
+    Serial.println("Streaming request received");
+    /* Start UDP socket */
+    udp_handler.begin();
+  
+    lamp_state.val.sysState = STREAMING;
+    /* Go to lamp mode 2 to show a demo effect */
+    lamp_state.val.lamp_mode = 2;
+  }
+
+  /* Streaming request */
+  if(lamp_state.val.lamp_mode == 1)
+  {
+    Serial.println("ON request received");
+    lamp_state.val.color.R = R_DEFAULT;
+    lamp_state.val.color.G = G_DEFAULT;
+    lamp_state.val.color.B = B_DEFAULT;
+    lamp_state.val.effect_delay = 50;
+    lamp_state.val.effect_speed = 50;   
+  }
+  
+  Serial.print("Received change request to mode ");
+  Serial.println(lamp_state.val.lamp_mode);
+     
+  lamp_state.old.lamp_mode = lamp_state.val.lamp_mode; 
+  LED_controller.update_mode();   
+}
 
 void status_update()
 { 
   
   /* Check difference in mode request */
-  if(status_request.lamp_mode != current_status.lamp_mode)
+  if(lamp_state.val.lamp_mode != lamp_state.old.lamp_mode)
   {
-    /* Finish previous effect */
-    LED_controller.end_effect();
-    
-    /* Streaming request */
-    if(status_request.lamp_mode == 3)
-    {
-      Serial.println("Streaming request received");
-      /* Start UDP socket */
-      udp_handler.begin();
-      status_request.streaming = true;
-      sysState = STREAMING;
-      /* Go to lamp mode 2 to show a demo effect */
-      status_request.lamp_mode = 2;
-    }
-
-    /* Streaming request */
-    if(status_request.lamp_mode == 1)
-    {
-      Serial.println("ON request received");
-      status_request.color.R = RGB_DEFAULT;
-      status_request.color.G = RGB_DEFAULT;
-      status_request.color.B = RGB_DEFAULT;
-      status_request.effect_delay = 50;
-      status_request.effect_speed = 50;
-      status_request.streaming = false;
-    }
-    
-    Serial.print("Received change request to mode ");
-    Serial.println(status_request.lamp_mode);
-       
-    current_status.lamp_mode = status_request.lamp_mode; 
-    LED_controller.update_mode();   
+    mode_update();
   }
 
-  else if(status_request.brightness != current_status.brightness)
+  else if(lamp_state.val.brightness != lamp_state.old.brightness)
   {
     Serial.print("Received change request to brightness level ");
-    Serial.println(status_request.brightness);    
+    Serial.println(lamp_state.val.brightness);    
 
-    current_status.brightness = status_request.brightness;  
+    lamp_state.old.brightness = lamp_state.val.brightness;  
     LED_controller.update_mode();
   }
 
-  else if(status_request.color.R != current_status.color.R || status_request.color.G != current_status.color.G || status_request.color.B != current_status.color.B)
+  else if(lamp_state.val.color.R != lamp_state.old.color.R || lamp_state.val.color.G != lamp_state.old.color.G || lamp_state.val.color.B != lamp_state.old.color.B)
   {
     Serial.print("Received change request to color: ");
-    Serial.println(status_request.color.R);
-    Serial.println(status_request.color.G);   
-    Serial.println(status_request.color.B);    
+    Serial.println(lamp_state.val.color.R);
+    Serial.println(lamp_state.val.color.G);   
+    Serial.println(lamp_state.val.color.B);    
 
-    current_status.brightness = status_request.brightness;  
+    lamp_state.val.brightness = lamp_state.val.brightness;  
 
     LED_controller.update_mode();
 
-    current_status.color.R = status_request.color.R;
-    current_status.color.G = status_request.color.G;
-    current_status.color.B = status_request.color.B;     
+    lamp_state.old.color.R = lamp_state.val.color.R;
+    lamp_state.old.color.G = lamp_state.val.color.G;
+    lamp_state.old.color.B = lamp_state.val.color.B;     
   }
-}
-
-void publish_initcomm()
-{
-  StaticJsonBuffer<256> jsonBuffer_send;
-  JsonObject& root_send = jsonBuffer_send.createObject();
-
-  root_send["mac"] = MACAddress_string.c_str();
-  root_send["ip"] = IPAddress_string.c_str();
-  root_send["rst_0"] = String(reset_reason_0).c_str();
-  root_send["rst_1"] = String(reset_reason_0).c_str();
-
-  char JSONmessageBuffer[256];
-  root_send.printTo(JSONmessageBuffer, sizeof(JSONmessageBuffer));
-  
-  client.publish("lamp_network/initcomm_tx", JSONmessageBuffer);
 }
 
 void initComm()
 {
   /* Send a MQTT request */
-  if(!initState.hasStarted)
+  if(!lamp_state.val.initState.hasStarted)
   {
-    LED_controller.setLeds(status_request.color,0,(NUM_LEDS*2)/3);
+    LED_controller.setLeds(lamp_state.val.color,0,(NUM_LEDS*2)/3);
 
-    publish_initcomm();
+    communication_handler->publish_initcomm();
     
-    initState.hasStarted = true;
-    initState.elapsed_time = millis();
+    lamp_state.val.initState.hasStarted = true;
+    lamp_state.val.initState.elapsed_time = millis();
   }
 
   /* Wait asynchronously for the answer */
-  else if(initState.hasStarted)
+  else if(lamp_state.val.initState.hasStarted)
   {
     /* Check if answer was received */
-    if(initState.isCompleted)
+    if(lamp_state.val.initState.isCompleted)
     {
 
-      client.unsubscribe("lamp_network/initcommrx");
+      communication_handler->finish_initcomm();
       
-      sysState = NORMAL;
+      lamp_state.val.sysState = NORMAL;
       setup_OTA();
 
       delay(1000);
       
-      LED_controller.setAllLeds(status_request.color,0);
+      LED_controller.setAllLeds(lamp_state.val.color,0);
       
-      status_request.color.R = RGB_DEFAULT;
-      status_request.color.G = RGB_DEFAULT;
-      status_request.color.B = RGB_DEFAULT;
+      lamp_state.val.color.R = R_DEFAULT;
+      lamp_state.val.color.G = G_DEFAULT;
+      lamp_state.val.color.B = B_DEFAULT;
       
       Serial.print("Successfull communication setup. Device ID: ");
-      Serial.println(deviceID);
+      Serial.println(lamp_state.val.deviceID);
 
       return;
     }
     /* Timeout. Show error and reset */
-    else if( (millis() - initState.elapsed_time) > initState.timeout )
+    else if( (millis() - lamp_state.val.initState.elapsed_time) > lamp_state.val.initState.timeout )
     {
-      status_request.color.R = RGB_DEFAULT;
-      status_request.color.G = 0;
-      status_request.color.B = 0;
-      LED_controller.setAllLeds(status_request.color,0);
+      lamp_state.val.color.R = R_DEFAULT;
+      lamp_state.val.color.G = 0;
+      lamp_state.val.color.B = 0;
+      LED_controller.setAllLeds(lamp_state.val.color,0);
 
       Serial.println("Error in communication setup. Restarting ESP32");
 
@@ -537,53 +302,20 @@ void initComm()
   }
 }
 
-void blink_sm()
-{
-  unsigned long now = millis(); 
-
-  if( (now - last_blink)> BLINK_PERIOD)
-  { 
-    RGBcolor color;
-    color.G = 0;
-    color.B = 0;
-    if(blink_on)
-    {
-      digitalWrite(LED_BUILTIN, HIGH);
-      color.R = 255;
-      LED_controller.setLeds(color, 0, 1, false);
-      blink_on = false; 
-    }
-    else
-    {
-      digitalWrite(LED_BUILTIN, LOW);
-      color.R = 0;
-      LED_controller.setLeds(color, 0, 1, false);
-      blink_on = true; 
-    }
-
-    last_blink = now;
-  }
-}
-
 void loop()
 {
+  communication_handler->network_loop();
 
-  switch(sysState)
+  switch(lamp_state.val.sysState)
   {
-    case STARTUP:
-      network_loop();
+    case STARTUP:      
       initComm();
       break;
       
-    case NORMAL:
-      network_loop();
+    case NORMAL:     
       updater.OTA_handle();
       status_update();
       LED_controller.feed();   
       break;
-      
-    case STREAMING:
-      streaming_loop();  
-      LED_controller.feed(); 
   }
 }
