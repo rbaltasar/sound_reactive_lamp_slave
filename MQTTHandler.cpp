@@ -1,6 +1,7 @@
 
 #include "MQTTHandler.h"
 
+/* Constructor. The object is created ony once */
 MQTTHandler::MQTTHandler(lamp_status* lamp_status_request):
 CommunicationHandler(lamp_status_request,MQTT),
 jsonBuffer(250),
@@ -16,22 +17,23 @@ m_last_alive_rx(0)
   m_client.setCallback(std::bind(&MQTTHandler::callback, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 }
 
+/* Start communication */
 void MQTTHandler::begin() 
 {
   /* Subscribe to topics */
   subscribe_topics(); 
 }
 
+/* Stop communication. TODO: unsubscribe? */
 void MQTTHandler::stop()
 {
-
+  //Nothing to do
 }
 
 /* Configure the callback function for a subscribed MQTT topic */
 void MQTTHandler::callback(char* topic, byte* payload, unsigned int length) {
 
   /* Print message (debugging only) */
-#if 1
   Serial.print("Message arrived [");
   Serial.print(topic);
   Serial.print("] ");
@@ -39,102 +41,120 @@ void MQTTHandler::callback(char* topic, byte* payload, unsigned int length) {
     Serial.print((char)payload[i]);
   }
   Serial.println();
-#endif
 
   /* Parse JSON object */
   JsonObject& root = jsonBuffer.parseObject(payload);
 
   /* Filter for topics */
+  /* Mode request */
   if( strcmp(topic,"lamp_network/mode_request") == 0 )
   {
+    /* Check if this message is targeted for this node */
     if(!is_targeted_device(root["id_mask"],m_lamp_status_request->deviceID)) return;
     
-    m_lamp_status_request->lamp_mode = root["mode"];   
+    /* Update shared memory */
+    m_lamp_status_request->lamp_mode = root["mode"];
+    Serial.print("Lamp mode requested: ");
     Serial.println(m_lamp_status_request->lamp_mode);
   }
-  
+  /* Brightness request */
   else if(strcmp(topic,"lamp_network/light_intensity") == 0)
   {
-
+    /* Check if this message is targeted for this node */
     if(!is_targeted_device(root["id_mask"],m_lamp_status_request->deviceID)) return;
     
     int rcv = root["intensity"];
-
-    if(rcv == 0) rcv = 255;
     
-    else
-    {
-      rcv = 11 - rcv;
-    }
+    /* Value conversion. TODO: improve */
+    if(rcv == 0) rcv = 255;    
+    else rcv = 11 - rcv;    
     
+    /* Update shared memory */
     m_lamp_status_request->brightness = rcv;
+    Serial.print("Brightness requested: ");
     Serial.println(rcv);
   }
 
+  /* Effect delay request */
   else if(strcmp(topic,"lamp_network/effect_delay") == 0)
   {
-
+    /* Check if this message is targeted for this node */
     if(!is_targeted_device(root["id_mask"],m_lamp_status_request->deviceID)) return;
     
     int rcv = root["delay"];
-    m_lamp_status_request->effect_amount = rcv;
-    rcv = rcv * 10;
-    m_lamp_status_request->effect_delay = rcv; //Delay in ms
+    /* Update shared memory */
+    m_lamp_status_request->effect_amount = rcv;    
+    m_lamp_status_request->effect_delay = rcv * 10; //Delay in ms. TODO: improve conversion
+    Serial.print("Delay requested: ");
     Serial.println(rcv);
   }
-
+  
+  /* Effect speed request */
   else if(strcmp(topic,"lamp_network/effect_speed") == 0)
   {
+    /* Check if this message is targeted for this node */
     if(!is_targeted_device(root["id_mask"],m_lamp_status_request->deviceID)) return;
     
+    /* Value conversion. TODO: improve */
     int rcv = root["speed"];
     rcv = 1000 - 10 * rcv;
+    /* Update shared memory */
     m_lamp_status_request->effect_speed = rcv; //Delay in ms
+    Serial.print("Effect speed requested: ");
     Serial.println(rcv);
   }  
 
+  /* Light color request */
   else if(strcmp(topic,"lamp_network/light_color") == 0)
   {
+    /* Check if this message is targeted for this node */
     if(!is_targeted_device(root["id_mask"],m_lamp_status_request->deviceID)) return;
     
+    /* Update shared memory */
     m_lamp_status_request->color.R = root["R"];
     m_lamp_status_request->color.G = root["G"];
     m_lamp_status_request->color.B = root["B"];
 
     // Output to serial monitor
-#if 1
+    Serial.print("Color requested: ");
     Serial.println(m_lamp_status_request->color.R);
     Serial.println(m_lamp_status_request->color.G);
     Serial.println(m_lamp_status_request->color.B);
-#endif
   }
-
+  
+  /* Light amount information */
   else if(strcmp(topic,"livingroom_node/light") == 0)
   {
+    /* Update shared memory */
     m_lamp_status_request->light_amount = root["light"];
     Serial.print("Received light amount: ");
     Serial.println(m_lamp_status_request->light_amount);
   }
 
+  /* Initial communication handshake response */
   else if(strcmp(topic,"lamp_network/initcommrx") == 0)
   {
+    /* Check if the handshake is addressed to this node. Before ID assignation the MAC address is the unique identifier */
     const char* mac_request = root["mac_origin"];
-
     if(strcmp(mac_request,m_lamp_status_request->MACAddress_string.c_str()) == 0)
     {
+      /* Update shared memory */
       m_lamp_status_request->deviceID = root["deviceID"];
       m_lamp_status_request->ota_url = root["OTA_URL"];
-      m_lamp_status_request->lamp_mode = root["mode"];    
-    }
-    
-    m_lamp_status_request->initState.isCompleted = true;
+      m_lamp_status_request->lamp_mode = root["mode"];      
+      m_lamp_status_request->initState.isCompleted = true;
+    }     
   }
+  
+  /* Alive check topic */
   else if(strcmp(topic,"lamp_network/alive_rx") == 0)
   {
+    /* Update last alive check received to keep communication alive */
     m_last_alive_rx = millis();
   }
 }
 
+/* Communication handling loop */
 void MQTTHandler::network_loop()
 {
   /* MQTT loop */
@@ -143,12 +163,14 @@ void MQTTHandler::network_loop()
 
   unsigned long now = millis(); 
 
+  /* Publish alive message */
   if( (now - m_last_alive_tx)> ALIVE_PERIOD)
   {   
     m_client.publish("lamp_network/alive_tx", String(m_lamp_status_request->deviceID).c_str());
     m_last_alive_tx = now;
   }
 
+  /* Reset controlelr if communication is lost (no alive message received in defined time) */
   if( (now - m_last_alive_rx)> (3*ALIVE_PERIOD))
   {   
     Serial.println("Lost MQTT connection. Reboot");
@@ -156,7 +178,7 @@ void MQTTHandler::network_loop()
   }
 }
 
-
+/* Subscribe to all the topics from the topic list */
 void MQTTHandler::subscribe_topics()
 {
   for(uint8_t i = 0; i < NUM_SUBSCRIBED_TOPICS; i++)
@@ -189,16 +211,19 @@ void MQTTHandler::reconnect()
       // Wait 5 seconds before retrying
       delay(500);
 
+      /* Restart the microcontroller after 10 failed attempts to connect */
       if(++m_mqtt_reconnect_counter > 10)  ESP.restart();
     }
   }  
 }
 
+/* Publish initial communication handshake */
 void MQTTHandler::publish_initcomm()
 {
   StaticJsonBuffer<256> jsonBuffer_send;
   JsonObject& root_send = jsonBuffer_send.createObject();
 
+  /* Send information about our MAC address, IP and reset reason */
   root_send["mac"] = m_lamp_status_request->MACAddress_string.c_str();
   root_send["ip"] = m_lamp_status_request->IPAddress_string.c_str();
   root_send["rst_0"] = "0";
@@ -209,8 +234,10 @@ void MQTTHandler::publish_initcomm()
   m_client.publish("lamp_network/initcomm_tx", JSONmessageBuffer); 
 }
 
+/* Finish communication handshake */
 void MQTTHandler::finish_initcomm()
 {
+  /* Unsubscribe to communication handshake topic */
   m_client.unsubscribe("lamp_network/initcommrx");
 }
 
