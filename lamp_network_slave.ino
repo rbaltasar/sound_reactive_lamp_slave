@@ -8,6 +8,10 @@
 #include "MQTTHandler.h"
 #include "network_credentials.h"
 
+/* ------------------------ */
+/* --- Global variables --- */
+/* ------------------------ */
+
 OTAUpdater_ESP32 updater;
 
 state_tracker<lamp_status> lamp_state;
