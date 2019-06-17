@@ -46,6 +46,7 @@ void setup()
   setup_hardware(); 
 
   /* Initial configuration of the lamp when the system is booted */
+  lamp_state.val.lamp_mode = 99;
   lamp_state.val.color.R = 0;
   lamp_state.val.color.G = G_DEFAULT;
   lamp_state.val.color.B = 0;
@@ -56,6 +57,7 @@ void setup()
   lamp_state.val.sysState = STARTUP;
 
   /* Same configuration for the "old" variable. TODO: create copy operator */
+  lamp_state.old.lamp_mode = 99;
   lamp_state.old.color.R = 0;
   lamp_state.old.color.G = G_DEFAULT;
   lamp_state.old.color.B = 0;
@@ -321,11 +323,7 @@ void initComm()
       delay(500);
       
       /* Give visual feedback */
-      LED_controller.setAllLeds(lamp_state.val.color,0);
-      
-      lamp_state.val.color.R = R_DEFAULT;
-      lamp_state.val.color.G = G_DEFAULT;
-      lamp_state.val.color.B = B_DEFAULT;
+      LED_controller.setAllLeds(lamp_state.val.color,0);      
       
       Serial.print("Successfull communication setup. Device ID: ");
       Serial.println(lamp_state.val.deviceID);
