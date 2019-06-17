@@ -36,14 +36,6 @@ struct init_struct
   unsigned long elapsed_time;
 };
 
-struct color_request 
-{
-  uint8_t msgID;
-  uint8_t red;
-  uint8_t green;
-  uint8_t blue;
-};
-
 struct RGBcolor
 {
   uint8_t R;
@@ -55,17 +47,24 @@ struct lamp_status
 {
   uint8_t lamp_mode;
   RGBcolor color;
+  uint8_t amplitude;
   uint8_t brightness;
   uint8_t deviceID;
   uint32_t effect_delay;
   uint32_t effect_speed;
   uint32_t effect_amount;
-  bool light_amount;
+  float light_amount;
   String IPAddress_string;
   String MACAddress_string;
   const char* ota_url;
   system_state_var sysState;
   init_struct initState;
+};
+
+enum MusicMode
+{
+  STREAMING_1 = 0,
+  STREAMING_2 = 1
 };
 
 enum StaticMode
@@ -90,6 +89,46 @@ enum StaticMode
   FADE_TO_BLACK = 17
 
 };
+
+/* UDP interface description */
+
+enum UDP_Message_Id
+{
+  MODE_SELECT = 0,
+  SYNC_REQ = 1,
+  PAYLOAD = 2,
+  ACK = 3,
+  ERR = 4
+};
+
+struct udp_payload 
+{
+  uint8_t msgID;
+  uint8_t red;
+  uint8_t green;
+  uint8_t blue;
+  uint8_t amplitude;
+};
+
+struct udp_mode_select 
+{
+  uint8_t msgID;
+  uint8_t mode_select;
+};
+
+struct udp_sync_req
+{
+  uint8_t msgID;
+  uint8_t delay_ms;
+};
+
+struct udp_ack 
+{
+  uint8_t msgID;
+  uint8_t nodeID;
+  uint8_t ackID;
+};
+
 
 #endif
 /*********************************************************************************************************

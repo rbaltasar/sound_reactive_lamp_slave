@@ -9,34 +9,29 @@
 
 #include "config.h"
 #include "common_datatypes.h"
-
-//#include <WiFiUdp.h>
 #include "AsyncUDP.h"
+#include "CommunicationHandler.h"
 
-class UDPHandler
+class UDPHandler : public CommunicationHandler
 {
 
 private:
 
-  lamp_status* m_lamp_status_request;
-  //WiFiUDP m_UDP;
-  AsyncUDP m_UDP;
-  //char m_message[20];
+  AsyncUDP m_UDP; 
   uint8_t* m_message;
-
-  uint32_t msg_count = 0;
-
+  lamp_status m_lamp_status_request_local;
+  
   void synchronize(unsigned long delay_ms);
+  UDP_Message_Id get_msg_id(uint8_t msgID);
 
 public: 
 
-  UDPHandler(lamp_status* lamp_status_request);
+  UDPHandler(lamp_status* lamp_status_request,timeSync* timer);
   ~UDPHandler();
 
   void begin();
   void stop();
-
-  bool network_loop();
+  void network_loop();
 
  
 };

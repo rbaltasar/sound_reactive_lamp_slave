@@ -2,10 +2,12 @@
 #include "LED_controller.h"
 
 
-LEDController::LEDController(lamp_status* lamp_status_request):
-m_lamp_status_request(lamp_status_request)
+LEDController::LEDController(lamp_status* lamp_status_request, timeSync* timer):
+m_lamp_status_request(lamp_status_request),
+m_timer(timer)
 {
-  m_static_effects = new LEDStaticEffects(this, m_leds, &m_timer);
+  m_static_effects = new LEDStaticEffects(this, m_leds, m_timer);
+  m_music_effects = new LEDMusicEffects(this, m_leds, m_timer);
 }
 
 LEDController::~LEDController()
@@ -20,7 +22,7 @@ void LEDController::setRGB(RGBcolor color)
 
 void LEDController::resync()
 {
-  m_last_iteration = m_timer.getTime();
+  m_last_iteration = m_timer->getTime();
   led_idx = 0;
   print_task = 0;  
 }
@@ -91,11 +93,14 @@ void LEDController::feed()
       case 2:
         test_effect(m_lamp_status_request->effect_speed);
         break;
+      case 4:
+        ambient_light_effect();
+        break;
     }
   }
 
   /* Static effects */
-  else if(m_mode >= 10)
+  else if(m_mode >= 10 && m_mode < 99)
   {
     switch(m_mode - 10)
     {
@@ -169,8 +174,16 @@ void LEDController::feed()
         break;      
     }
   }
-  
-  
+  /* Dynamic effects */
+  else if(m_mode >= 100)
+  {
+      switch(m_mode - 10)
+    {
+      case STREAMING_1:
+        m_music_effects->streaming_1(30, m_lamp_status_request->color.R, m_lamp_status_request->color.G, m_lamp_status_request->color.B, m_lamp_status_request->amplitude);
+        break;
+    }
+  }
 }
   
 void LEDController::update_mode()
@@ -193,9 +206,20 @@ void LEDController::end_effect()
   m_static_effects->end_effect();
 }
 
+void LEDController::ambient_light_effect()
+{
+  const float threshold = 20.0;
+  if(m_lamp_status_request->light_amount > threshold) setRGB(0, 0, 0);
+  else
+  {
+    float multiplier = (threshold - m_lamp_status_request->light_amount) / (2*threshold);
+    setRGB(R_DEFAULT * multiplier, G_DEFAULT * multiplier, B_DEFAULT * multiplier);
+  }     
+}
+
 void LEDController::test_effect(uint32_t print_delay)
 {
-  unsigned long now = m_timer.getTime();
+  unsigned long now = m_timer->getTime();
 
   if( ((now - m_last_iteration) > print_delay) && (print_task == 0) )
   {

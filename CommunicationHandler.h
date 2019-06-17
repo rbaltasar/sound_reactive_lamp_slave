@@ -9,6 +9,7 @@
 
 #include "config.h"
 #include "common_datatypes.h"
+#include "timeSync.h"
 
 class CommunicationHandler
 {
@@ -19,10 +20,12 @@ class CommunicationHandler
 
     lamp_status* m_lamp_status_request;
     COMM_TYPE m_communication_type;
+    timeSync* m_timer;
 
-    CommunicationHandler(lamp_status* lamp_status_request, COMM_TYPE communication_type):
+    CommunicationHandler(lamp_status* lamp_status_request, COMM_TYPE communication_type,timeSync* timer):
     m_lamp_status_request(lamp_status_request),
-    m_communication_type(communication_type)
+    m_communication_type(communication_type),
+    m_timer(timer)
     {
        
     };

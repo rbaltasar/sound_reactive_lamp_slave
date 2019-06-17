@@ -52,7 +52,7 @@ private:
 
 public: 
 
-  MQTTHandler(lamp_status* m_lamp_status_request);
+  MQTTHandler(lamp_status* m_lamp_status_request,timeSync* timer);
 
   void begin();
   void stop();

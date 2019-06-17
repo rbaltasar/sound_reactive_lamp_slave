@@ -6,6 +6,7 @@
 #include "UDPHandler.h"
 #include "OTA_updater_ESP32.h"
 #include "MQTTHandler.h"
+#include "UDPHandler.h"
 #include "network_credentials.h"
 
 /* ------------------------ */
@@ -17,13 +18,17 @@ OTAUpdater_ESP32 updater;
 /* Shared memory containing the global configuration and state of the lamp */
 /* This object is shared within the LED Controller and the Communication Handler */
 state_tracker<lamp_status> lamp_state;
+/* Shared synchronized timer */
+timeSync timer;
 /* LED controller object */
-LEDController LED_controller(&lamp_state.val);
+LEDController LED_controller(&lamp_state.val,&timer);
 /* Polymorphic pointer. Shall point to the currently used communication class */
 CommunicationHandler* communication_handler;
 /* MQTT communication handler */
-
+MQTTHandler mqtt_handler(&lamp_state.val,&timer);
 /* UDP communication handler */
+UDPHandler udp_handler(&lamp_state.val,&timer);
+
 
 /* Reseat reason. Only for debugging reasons. Remove long term */
 RESET_REASON reset_reason_0;
@@ -41,7 +46,8 @@ void setup()
   /* Setup the WiFi connection */
   setup_wifi();
   /* Start with MQTT communication. Create object */  
-  communication_handler = new MQTTHandler(&lamp_state.val);
+  communication_handler = &mqtt_handler;
+  communication_handler->begin();
   /* Setup the hardware */
   setup_hardware(); 
 
@@ -163,34 +169,6 @@ void setup_OTA()
   updater.begin(lamp_state.val.ota_url);
 }
 
-#if 0
-void streaming_loop()
-{
-    
-  //isStreaming = udp_handler.network_loop();
-  
-
-  if(!status_request.streaming)
-  {
-    udp_handler.stop();
-
-    status_request.lamp_mode = 1;
-    status_request.color.R = R_DEFAULT;
-    status_request.color.G = G_DEFAULT;
-    status_request.color.B = B_DEFAULT;
-
-    sysState = NORMAL;
-  }
-
-  if(status_request.resync == true)
-  {
-    /* Do effect resynchronization */
-    LED_controller.resync();
-    status_request.resync = false;
-  }  
-}
-#endif
-
 /* Update the current lamp mode */
 /* Switch between communication handlers when necessary */
 void mode_update()
@@ -202,31 +180,21 @@ void mode_update()
   if(lamp_state.val.lamp_mode >= 100 && lamp_state.old.lamp_mode < 100) //Switch from MQTT to UDP
   {
     /* Stop MQTT communication handler */
-    
+    communication_handler->stop();
     /* Assign UDP communication handler */
-    
+    communication_handler = &udp_handler;    
     /* Start UDP communication handler */
+    communication_handler->begin();
   }
   else if(lamp_state.val.lamp_mode >= 100 && lamp_state.old.lamp_mode < 100) //Switch from UDP to MQTT
   {
     /* Stop UDP communication handler */
-    
+    communication_handler->stop();
     /* Assign MQTT communication handler */
-    
+    communication_handler = &mqtt_handler;
     /* Start MQTT communication handler */
-  }
-  
-  /* Streaming request */
-  if(lamp_state.val.lamp_mode == 3)
-  {
-    Serial.println("Streaming request received");
-    /* Start UDP socket */
-    udp_handler.begin();
-  
-    lamp_state.val.sysState = STREAMING;
-    /* Go to lamp mode 2 to show a demo effect */
-    lamp_state.val.lamp_mode = 2;
-  }
+    communication_handler->begin();
+  } 
 
   /* ON request - force default colors */
   if(lamp_state.val.lamp_mode == 1)
@@ -249,8 +217,7 @@ void mode_update()
 
 /* Check for update requests */
 void status_update()
-{ 
-  
+{   
   /* Check difference in mode request */
   if(lamp_state.val.lamp_mode != lamp_state.old.lamp_mode)
   {

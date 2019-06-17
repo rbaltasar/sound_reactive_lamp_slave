@@ -2,8 +2,8 @@
 #include "MQTTHandler.h"
 
 /* Constructor. The object is created ony once */
-MQTTHandler::MQTTHandler(lamp_status* lamp_status_request):
-CommunicationHandler(lamp_status_request,MQTT),
+MQTTHandler::MQTTHandler(lamp_status* lamp_status_request,timeSync* timer):
+CommunicationHandler(lamp_status_request,MQTT,timer),
 jsonBuffer(250),
 m_mqtt_reconnect_counter(0),
 m_last_alive_tx(0),

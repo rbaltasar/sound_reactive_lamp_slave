@@ -11,9 +11,11 @@
 #include <FastLED.h>
 #include "common_datatypes.h"
 #include "LED_Static_Effects.h"
+#include "LED_Music_Effects.h"
 #include "timeSync.h"
 
 class LEDStaticEffects;
+class LEDMusicEffects;
 
 class LEDController
 {
@@ -23,17 +25,20 @@ private:
   CRGB m_leds[NUM_LEDS];
   lamp_status* m_lamp_status_request;
   uint8_t m_mode;
-  timeSync m_timer;
+  timeSync* m_timer;
   unsigned long m_last_iteration = 0;
 
   uint8_t led_idx = 0;
   uint8_t print_task = 0;
 
   LEDStaticEffects* m_static_effects;
+  LEDMusicEffects* m_music_effects;
+
+  void ambient_light_effect();
 
 public: 
 
-  LEDController(lamp_status* lamp_status_request);
+  LEDController(lamp_status* lamp_status_request, timeSync* timer);
   ~LEDController();
   void setup(); 
 
