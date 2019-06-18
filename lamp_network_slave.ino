@@ -186,7 +186,7 @@ void mode_update()
     /* Start UDP communication handler */
     communication_handler->begin();
   }
-  else if(lamp_state.val.lamp_mode >= 100 && lamp_state.old.lamp_mode < 100) //Switch from UDP to MQTT
+  else if(lamp_state.old.lamp_mode >= 100 && lamp_state.val.lamp_mode < 100) //Switch from UDP to MQTT
   {
     /* Stop UDP communication handler */
     communication_handler->stop();
@@ -330,7 +330,7 @@ void loop()
       
     case NORMAL: 
       /* Handle OTA */
-      updater.OTA_handle();
+      if(communication_handler->get_comm_type() == MQTT) updater.OTA_handle();
       /* Check for requested updates */
       status_update();
       /* Feed the LED controller */

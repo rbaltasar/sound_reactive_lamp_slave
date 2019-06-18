@@ -26,7 +26,7 @@ private:
   
   unsigned long m_last_iteration;
 
-  void shift_leds(const uint8_t positions, const bool right, const uint8_t delay_ms, const uint8_t R_in, const uint8_t G_in, const uint8_t B_in);
+  void shift_leds(uint8_t positions, const bool right, const uint8_t delay_ms, const uint8_t R_in, const uint8_t G_in, const uint8_t B_in);
 
 public:
 

@@ -17,8 +17,6 @@
 /* List of subscribed topics */
 #define NUM_SUBSCRIBED_TOPICS 8
 
-
-
 class MQTTHandler : public CommunicationHandler
 {
 

@@ -22,17 +22,23 @@ void LEDMusicEffects::end_effect()
   
 }
 
-void LEDMusicEffects::shift_leds(const uint8_t positions, const bool right, const uint8_t delay_ms, const uint8_t R_in, const uint8_t G_in, const uint8_t B_in)
+void LEDMusicEffects::shift_leds(uint8_t positions, const bool right, const uint8_t delay_ms, const uint8_t R_in, const uint8_t G_in, const uint8_t B_in)
 {
+  if(positions == 0) positions = 1;
+  
   if(right)
   {
     for(uint8_t j = NUM_LEDS - 1; j >= positions ; j--)
     {
       m_leds[j] = m_leds[j-positions];
+      //Serial.println(j);
+      //delay(100);
     }
     for(uint8_t j = 0; j < positions; j++)
     {
       m_leds[j] = CRGB(R_in,G_in,B_in);
+      //Serial.println(j);
+      //delay(100);
     }
   }
 

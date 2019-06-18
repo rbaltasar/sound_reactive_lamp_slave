@@ -21,6 +21,7 @@ m_last_alive_rx(0)
 void MQTTHandler::begin() 
 {
   /* Subscribe to topics */
+  Serial.println("Subscribing to topics");
   subscribe_topics(); 
 }
 
@@ -28,6 +29,7 @@ void MQTTHandler::begin()
 void MQTTHandler::stop()
 {
   //Nothing to do
+  Serial.println("Stopping MQTT communication handler");
 }
 
 /* Configure the callback function for a subscribed MQTT topic */
