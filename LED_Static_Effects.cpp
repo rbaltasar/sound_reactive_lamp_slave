@@ -1038,7 +1038,6 @@ void LEDStaticEffects::setPixel(int Pixel, byte red, byte green, byte blue)
     Pixel = NUM_LEDS - 1;
   }
 
-
  #ifdef ADAFRUIT_NEOPIXEL_H
    // NeoPixel
    strip.setPixelColor(Pixel, strip.Color(red, green, blue));
@@ -1054,11 +1053,97 @@ void LEDStaticEffects::setPixel(int Pixel, byte red, byte green, byte blue)
 // Set all LEDs to a given color and apply it (visible)
 void LEDStaticEffects::setAll(byte red, byte green, byte blue)
 {
+
   for(int i = 0; i < NUM_LEDS; i++ )
   {
     setPixel(i, red, green, blue);
   }
   showStrip();
+}
+
+/* This function works on the assumption that all the leds have the same color */
+void LEDStaticEffects::fade_to_color(byte red, byte green, byte blue, uint8_t delay_ms)
+{
+  bool exit_condition = false;
+  uint8_t exit_counter;
+  uint8_t red_increment, green_increment, blue_increment;
+  uint16_t red_current, green_current, blue_current;
+
+  /* Compute directions */
+  bool dir_r = red > leds[0].r ? true : false;
+  bool dir_g = green > leds[0].g ? true : false;
+  bool dir_b = blue > leds[0].b ? true : false;
+
+  /* Compute increments */
+  red_increment = abs(red - leds[0].r) / 20;
+  green_increment = abs(green - leds[0].g) / 20;
+  blue_increment = abs(blue - leds[0].b) / 20;
+
+  red_increment = red_increment == 0 ? 1 : red_increment;
+  green_increment = green_increment == 0 ? 1 : green_increment;
+  blue_increment = blue_increment == 0 ? 1 : blue_increment;
+
+  while(!exit_condition)
+  {
+    red_current = leds[0].r;
+    green_current = leds[0].g;
+    blue_current = leds[0].b;
+
+    exit_counter = 0;
+
+    if(dir_r)
+    { 
+      if(red_current < red) red_current+= red_increment;
+      else exit_counter++;
+    }
+    else
+    {
+      if(red_current > red)
+      {
+        if(red_increment > red_current) red_current = 0;
+        else red_current-= red_increment;
+      }
+        
+      else exit_counter++;
+    }
+    if(dir_g)
+    { 
+      if(green_current < green) green_current+= green_increment;
+      else exit_counter++;
+    }
+    else
+    {
+      if(green_current > green) 
+      {
+        if(green_increment > green_current) green_current = 0;
+        else green_current-= green_increment;
+      }
+      else exit_counter++;
+    }
+    if(dir_b)
+    { 
+      if(blue_current < blue) blue_current+= blue_increment;
+      else exit_counter++;
+    }
+    else
+    {
+      if(blue_current > blue)
+      {
+        if(blue_increment > blue_current) blue_current = 0;
+        else blue_current-= blue_increment;
+      }
+      else exit_counter++;
+    }
+
+    if(red_current > 255) red_current = 255;
+    if(green_current > 255) green_current = 255;
+    if(blue_current > 255) blue_current = 255;
+      
+    setAll((uint8_t)red_current,(uint8_t)green_current,(uint8_t)blue_current);
+    delay(delay_ms);
+
+    if(exit_counter == 3) exit_condition = true;
+  }
 }
 
 /*********************************************************************************************************

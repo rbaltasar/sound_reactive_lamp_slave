@@ -54,8 +54,6 @@ public:
   void setAllLeds(RGBcolor, unsigned long delay_ms);
   void setLeds(RGBcolor, unsigned long delay_ms,uint8_t num_leds, bool erase_others = true);
 
-  void test_effect(uint32_t print_delay);
-
   void end_effect();
 
 };

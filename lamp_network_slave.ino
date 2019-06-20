@@ -224,6 +224,13 @@ void status_update()
     mode_update();
   }
 
+  /* Check difference in light */
+  if((lamp_state.val.light_amount != lamp_state.old.light_amount) && (lamp_state.val.lamp_mode == 4))
+  {
+    LED_controller.update_mode();
+    lamp_state.old.light_amount = lamp_state.val.light_amount;
+  }
+
   /* Check difference in brightness request */
   else if(lamp_state.val.brightness != lamp_state.old.brightness)
   {

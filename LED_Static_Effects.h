@@ -61,6 +61,8 @@ public:
 
   void end_effect();
 
+  void fade_to_color(byte red, byte green, byte blue, uint8_t delay_ms);
+
   void RGBLoop();
   void FadeInOut(byte red, byte green, byte blue);
   void Strobe(byte red, byte green, byte blue, int StrobeCount, int FlashDelay, int EndPause);

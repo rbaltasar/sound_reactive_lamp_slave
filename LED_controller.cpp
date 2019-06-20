@@ -88,15 +88,7 @@ void LEDController::feed()
   /* Music effects */
   if(m_mode > 1 && m_mode < 10)
   {
-    switch(m_mode)
-    {
-      case 2:
-        test_effect(m_lamp_status_request->effect_speed);
-        break;
-      case 4:
-        ambient_light_effect();
-        break;
-    }
+
   }
 
   /* Static effects */
@@ -198,6 +190,10 @@ void LEDController::update_mode()
     case 1:
       setRGB(m_lamp_status_request->color.R / m_lamp_status_request->brightness, m_lamp_status_request->color.G / m_lamp_status_request->brightness, m_lamp_status_request->color.B / m_lamp_status_request->brightness);
       break;
+    case 4:
+      ambient_light_effect();
+      break;
+    
   }
 }
 
@@ -208,53 +204,43 @@ void LEDController::end_effect()
 
 void LEDController::ambient_light_effect()
 {
-  const float threshold = 20.0;
-  if(m_lamp_status_request->light_amount > threshold) setRGB(0, 0, 0);
+  const float threshold = 30.0;
+  const uint8_t delay_ms = 150;
+  uint8_t r,g,b;
+  if(m_lamp_status_request->light_amount > threshold)
+  {
+    //setRGB(0, 0, 0);
+    r = 0;
+    g = 0;
+    b = 0;
+  }
   else
   {
-    float multiplier = (threshold - m_lamp_status_request->light_amount) / (2*threshold);
-    setRGB(R_DEFAULT * multiplier, G_DEFAULT * multiplier, B_DEFAULT * multiplier);
-  }     
-}
+    float multiplier;
 
-void LEDController::test_effect(uint32_t print_delay)
-{
-  unsigned long now = m_timer->getTime();
-
-  if( ((now - m_last_iteration) > print_delay) && (print_task == 0) )
-  {
-    //Serial.println("Iteration ON due");
-    m_last_iteration = now;
-    if( led_idx < NUM_LEDS )
+    if(m_lamp_status_request->light_amount > (threshold / 2))
     {
-      m_leds[led_idx] = CRGB(m_lamp_status_request->color.R, m_lamp_status_request->color.G, m_lamp_status_request->color.B);
-      FastLED.show();
-      led_idx++;
+      multiplier = (threshold - m_lamp_status_request->light_amount) / (4*threshold);
+    }
+    else if (m_lamp_status_request->light_amount > 0)
+    {
+      multiplier = (threshold - m_lamp_status_request->light_amount) / (2*threshold);
     }
     else
     {
-      led_idx = 0;
-      print_task = 1;
+      multiplier = 1;
     }
+
+    r = R_DEFAULT * multiplier;
+    g = G_DEFAULT * multiplier;
+    b = B_DEFAULT * multiplier;
   }
-  
-  else if( ((now - m_last_iteration) > print_delay) && (print_task == 1) )
-  {
-    //Serial.println("Iteration OFF due");
-    m_last_iteration = now;
-    if( led_idx < NUM_LEDS )
-    {
-      m_leds[led_idx] = CRGB(0, 0, 0);
-      FastLED.show();
-      led_idx++;
-    }
-    else
-    {
-      led_idx = 0;
-      print_task = 0;
-    }    
-  }
+
+  m_static_effects->fade_to_color(r, g, b,delay_ms);
+ 
 }
+
+
 
 /*********************************************************************************************************
   END FILE
