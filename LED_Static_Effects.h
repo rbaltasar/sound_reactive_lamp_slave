@@ -60,6 +60,7 @@ public:
   ~LEDStaticEffects();
 
   void end_effect();
+  void resync();
 
   void fade_to_color(byte red, byte green, byte blue, uint8_t delay_ms);
 

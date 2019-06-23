@@ -260,6 +260,16 @@ void status_update()
     /* Inform the LED controller about the update */
     LED_controller.update_mode();
   }
+
+  /* Check resync request */
+  if(lamp_state.val.resync)
+  {
+    /* Resynchronize led controller */
+    LED_controller.resync();
+
+    /* Deactivate resync flag */
+    lamp_state.val.resync = false;
+  }
 }
 
 /* Handle initial communication handshake to ensurue stable MQTT communication with the broker */

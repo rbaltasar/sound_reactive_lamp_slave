@@ -46,7 +46,6 @@ struct RGBcolor
 struct lamp_status
 {
   uint8_t lamp_mode;
-  RGBcolor color;
   uint8_t amplitude;
   uint8_t brightness;
   uint8_t deviceID;
@@ -57,6 +56,8 @@ struct lamp_status
   String IPAddress_string;
   String MACAddress_string;
   const char* ota_url;
+  bool resync;
+  RGBcolor color;
   system_state_var sysState;
   init_struct initState;
 };
@@ -104,6 +105,7 @@ enum UDP_Message_Id
 struct udp_payload 
 {
   uint8_t msgID;
+  uint8_t mask;
   uint8_t red;
   uint8_t green;
   uint8_t blue;

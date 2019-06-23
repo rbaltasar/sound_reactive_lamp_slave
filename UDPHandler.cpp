@@ -30,27 +30,6 @@ void UDPHandler::begin()
         m_UDP.onPacket([this](AsyncUDPPacket packet) {
 
             m_message = packet.data();
-            
-#if 0
-            Serial.print("UDP Packet Type: ");
-            Serial.print(packet.isBroadcast()?"Broadcast":packet.isMulticast()?"Multicast":"Unicast");
-            Serial.print(", From: ");
-            Serial.print(packet.remoteIP());
-            Serial.print(":");
-            Serial.print(packet.remotePort());
-            Serial.print(", To: ");
-            Serial.print(packet.localIP());
-            Serial.print(":");
-            Serial.print(packet.localPort());
-            Serial.print(", Length: ");
-            Serial.print(packet.length());
-            Serial.print(", Data: ");
-            Serial.print(m_message[0]);
-            Serial.print(m_message[1]);
-            Serial.println();
-            //reply to the client
-            //packet.printf("Got %u bytes of data", packet.length());
-#endif
 
             switch(get_msg_id(m_message[0]))
             {
@@ -72,7 +51,9 @@ void UDPHandler::begin()
               {
                 udp_sync_req msg_struct = *((udp_sync_req*)m_message);
 
-                synchronize(msg_struct.delay_ms);
+                //synchronize(msg_struct.delay_ms);
+
+                m_lamp_status_request_local.resync = true;
 
                 Serial.print("Received Sync Request: ");
                 Serial.println(msg_struct.delay_ms);
@@ -83,10 +64,21 @@ void UDPHandler::begin()
               {
                 udp_payload msg_struct = *((udp_payload*)m_message);
 
-                m_lamp_status_request_local.color.R = msg_struct.red;
-                m_lamp_status_request_local.color.G = msg_struct.green;
-                m_lamp_status_request_local.color.B = msg_struct.blue;
-                m_lamp_status_request_local.amplitude = msg_struct.amplitude;
+                /* Check if this message is targeted for this node */
+                if(!is_targeted_device(msg_struct.mask,m_lamp_status_request->deviceID))
+                {
+                  m_lamp_status_request_local.color.R = 0;
+                  m_lamp_status_request_local.color.G = 0;
+                  m_lamp_status_request_local.color.B = 0;
+                  m_lamp_status_request_local.amplitude = 1;
+                }
+                else
+                {
+                  m_lamp_status_request_local.color.R = msg_struct.red;
+                  m_lamp_status_request_local.color.G = msg_struct.green;
+                  m_lamp_status_request_local.color.B = msg_struct.blue;
+                  m_lamp_status_request_local.amplitude = msg_struct.amplitude;
+                }
 
                 Serial.print("Received Payload: [");
                 Serial.print(msg_struct.red);
@@ -140,6 +132,11 @@ void UDPHandler::network_loop()
     received_mode_select = false;
     Serial.println("Updating shared mode");
     Serial.println(m_lamp_status_request->lamp_mode);
+  }
+  if(m_lamp_status_request_local.resync)
+  {
+    m_lamp_status_request->resync = true;
+    m_lamp_status_request_local.resync = false;
   }
 
 }

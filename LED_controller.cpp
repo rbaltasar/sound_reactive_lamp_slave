@@ -22,9 +22,9 @@ void LEDController::setRGB(RGBcolor color)
 
 void LEDController::resync()
 {
-  m_last_iteration = m_timer->getTime();
-  led_idx = 0;
-  print_task = 0;  
+  m_static_effects->resync();
+  m_music_effects->resync();
+  
 }
 
 void LEDController::setRGB(uint8_t R, uint8_t G, uint8_t B)

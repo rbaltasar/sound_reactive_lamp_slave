@@ -22,7 +22,11 @@ void MQTTHandler::begin()
 {
   /* Subscribe to topics */
   Serial.println("Subscribing to topics");
-  subscribe_topics(); 
+  subscribe_topics();
+
+  /* Restet alive timer to avoid reboot due to communication error */
+  m_last_alive_rx = millis();
+ 
 }
 
 /* Stop communication. TODO: unsubscribe? */

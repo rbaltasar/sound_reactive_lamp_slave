@@ -12,6 +12,7 @@ struct sync_request {
 
 struct color_request {
   uint8_t msgID;
+  uint8_t mask;
   uint8_t red;
   uint8_t green;
   uint8_t blue;
@@ -37,20 +38,19 @@ void stop_multicast()
 
   std::cout << "Created Client list" << std::endl;
 
-  udp_server server("192.168.2.120",7001);
+  udp_server server("192.168.2.123",7001);
   std::cout << "Created Server" << std::endl;
 
-  sync_request msg;
-  msg.msgID = 0x03;
+  /* Ending streaming mode */
+  mode_request mode_select_message;
+  mode_select_message.msgID = 0x00;
+  mode_select_message.mode_select = 1;
+  for(uint8_t k = 0; k < 5; k++)
+  {
+    client_list[0]->send((char*)&mode_select_message, sizeof(mode_select_message));
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  }
 
-
-  uint8_t response = 0;
-
-  /* Send messages */
-  std::cout << "Sending first sync message" << std::endl;
-  msg.msgContent = 0xEA;
-  client_list[0]->send((char*)&msg, sizeof(msg));
-  std::this_thread::sleep_for(std::chrono::milliseconds(100));
 }
 
 
@@ -72,11 +72,19 @@ void run_test_multicast()
   udp_server server("192.168.2.123",7001);
   std::cout << "Created Server" << std::endl;
 
+  /* Synchronization */
+  sync_request sync;
+  sync.msgID = 0x01;
+  sync.msgContent = 0;
+
+  client_list[0]->send((char*)&sync, sizeof(sync));
+  std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+
   /* Payload */
   color_request msg;
   msg.msgID = 0x02;
-  msg.amplitude = 2;
-  uint32_t num_iterations = 10;
+  msg.amplitude = 1;
+  uint32_t num_iterations = 100;
 
   std::cout << "Starting streaming with " << num_iterations << " iterations" << std::endl;
 
@@ -85,6 +93,8 @@ void run_test_multicast()
   uint8_t count_B = 0;
 
   /* Send messages */
+  const uint32_t delay_ms_1 = 10;
+  const uint32_t delay_ms_2 = 30;
   while(num_iterations > 0)
   {
 
@@ -94,38 +104,41 @@ void run_test_multicast()
     msg.red = 0x01;
     msg.green = 0x01;
     msg.blue = 0x01;
+    msg.mask = 0x0D;
 
     for(uint8_t red_count = 0; red_count < 7; red_count++)
     {
       msg.red = msg.red << 1;
       client_list[0]->send((char*)&msg, sizeof(msg));
-      std::this_thread::sleep_for(std::chrono::milliseconds(10));
+      std::this_thread::sleep_for(std::chrono::milliseconds(delay_ms_1));
       client_list[0]->send((char*)&msg, sizeof(msg));
-      std::this_thread::sleep_for(std::chrono::milliseconds(30));
+      std::this_thread::sleep_for(std::chrono::milliseconds(delay_ms_2));
     }
 
     msg.red = 0x01;
     msg.green = 0x01;
     msg.blue = 0x01;
+    msg.mask = 0x08;
 
     for(uint8_t red_count = 0; red_count < 7; red_count++)
     {
       msg.green = msg.green << 1;
-      std::this_thread::sleep_for(std::chrono::milliseconds(10));
+      std::this_thread::sleep_for(std::chrono::milliseconds(delay_ms_1));
       client_list[0]->send((char*)&msg, sizeof(msg));
-      std::this_thread::sleep_for(std::chrono::milliseconds(30));
+      std::this_thread::sleep_for(std::chrono::milliseconds(delay_ms_2));
     }
 
     msg.red = 0x01;
     msg.green = 0x01;
     msg.blue = 0x01;
+    msg.mask = 0x04;
 
     for(uint8_t red_count = 0; red_count < 7; red_count++)
     {
       msg.blue = msg.blue << 1;
-      std::this_thread::sleep_for(std::chrono::milliseconds(10));
+      std::this_thread::sleep_for(std::chrono::milliseconds(delay_ms_1));
       client_list[0]->send((char*)&msg, sizeof(msg));
-      std::this_thread::sleep_for(std::chrono::milliseconds(30));
+      std::this_thread::sleep_for(std::chrono::milliseconds(delay_ms_2));
     }
 
   }

@@ -22,6 +22,11 @@ void LEDStaticEffects::end_effect()
   deallocate_bouncing_mem();
 }
 
+void LEDStaticEffects::resync()
+{
+  m_last_iteration = m_timer->getTime();
+}
+
 void LEDStaticEffects::RGBLoop()
 {
 

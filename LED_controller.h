@@ -26,10 +26,6 @@ private:
   lamp_status* m_lamp_status_request;
   uint8_t m_mode;
   timeSync* m_timer;
-  unsigned long m_last_iteration = 0;
-
-  uint8_t led_idx = 0;
-  uint8_t print_task = 0;
 
   LEDStaticEffects* m_static_effects;
   LEDMusicEffects* m_music_effects;

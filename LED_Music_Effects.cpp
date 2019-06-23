@@ -22,6 +22,11 @@ void LEDMusicEffects::end_effect()
   
 }
 
+void LEDMusicEffects::resync()
+{
+  m_last_iteration = m_timer->getTime();
+}
+
 void LEDMusicEffects::shift_leds(uint8_t positions, const bool right, const uint8_t delay_ms, const uint8_t R_in, const uint8_t G_in, const uint8_t B_in)
 {
   if(positions == 0) positions = 1;
