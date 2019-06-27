@@ -4,12 +4,12 @@ UDPHandler::UDPHandler(lamp_status* lamp_status_request,timeSync* timer):
 CommunicationHandler(lamp_status_request,UDP,timer),
 received_mode_select(false)
 {
-  m_message = new uint8_t[20];
+ 
 }
 
 UDPHandler::~UDPHandler()
 {
-  delete [] m_message;
+
 }
 
 UDP_Message_Id UDPHandler::get_msg_id(uint8_t msgID)
@@ -23,10 +23,9 @@ UDP_Message_Id UDPHandler::get_msg_id(uint8_t msgID)
 void UDPHandler::begin() 
 {
   Serial.println("Starting UDP communication handler");
-  //m_UDP.begin(7001);
+
   if(m_UDP.listenMulticast(IPAddress(239,1,2,3), 7001)) {
-        //Serial.print("UDP Listening on IP: ");
-        //Serial.println(WiFi.localIP());
+
         m_UDP.onPacket([this](AsyncUDPPacket packet) {
 
             m_message = packet.data();
