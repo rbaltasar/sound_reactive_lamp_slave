@@ -1,6 +1,8 @@
 #if !defined COMON_DATATYPES_H
 #define COMON_DATATYPES_H
 
+#include "config.h"
+
 /* Logical states */
 template <typename T>
 struct state_tracker
@@ -9,65 +11,29 @@ struct state_tracker
   T old;
 };
 
+/* ------- ENUMS -------- */
+/* Status of the system */
 enum system_state_var
 {
-  STARTUP = 0,
-  NORMAL = 1,
-  STREAMING = 2
+  STARTUP = 0, // Initial communication handshake (MQTT)
+  NORMAL = 1 // Normal mode
 };
 
+/* Communication type */
 enum COMM_TYPE
 {
   MQTT = 0,
   UDP = 1
 };
 
-struct sync_request 
-{
-  uint8_t msgID;
-  uint8_t msgContent;
-};
-
-struct init_struct
-{
-  bool hasStarted;
-  bool isCompleted;
-  const unsigned long timeout = INIT_COMM_TIMEOUT;
-  unsigned long elapsed_time;
-};
-
-struct RGBcolor
-{
-  uint8_t R;
-  uint8_t G;
-  uint8_t B;
-};
-
-struct lamp_status
-{
-  uint8_t lamp_mode;
-  uint8_t amplitude;
-  uint8_t brightness;
-  uint8_t deviceID;
-  uint32_t effect_delay;
-  uint32_t effect_speed;
-  uint32_t effect_amount;
-  float light_amount;
-  String IPAddress_string;
-  String MACAddress_string;
-  const char* ota_url;
-  bool resync;
-  RGBcolor color;
-  system_state_var sysState;
-  init_struct initState;
-};
-
+/* Music effects */
 enum MusicMode
 {
   STREAMING_1 = 0,
   STREAMING_2 = 1
 };
 
+/* Static effects */
 enum StaticMode
 {
   RGB_LOOP = 0,
@@ -88,11 +54,9 @@ enum StaticMode
   BOUNCING_COLORED_BALLS = 15,
   METEOR_RAIN = 16,
   FADE_TO_BLACK = 17
-
 };
 
-/* UDP interface description */
-
+/* UDP message identifiers */
 enum UDP_Message_Id
 {
   MODE_SELECT = 0,
@@ -102,28 +66,92 @@ enum UDP_Message_Id
   ERR = 4
 };
 
-struct udp_payload 
+/* ------- STRUCTS ------- */
+/* Initial communication handshake */
+struct init_struct
 {
-  uint8_t msgID;
-  uint8_t mask;
-  uint8_t red;
-  uint8_t green;
-  uint8_t blue;
-  uint8_t amplitude;
+  bool hasStarted; //The handshake has started
+  bool isCompleted; //The handshake is completed
+  const unsigned long timeout = INIT_COMM_TIMEOUT; //Handshake timeout
+  unsigned long elapsed_time; //Handshake timer
 };
 
+/* Color info encapsulation */
+struct RGBcolor
+{
+  uint8_t R;
+  uint8_t G;
+  uint8_t B;
+};
+
+/* Lamp main shared memory */
+struct lamp_status
+{
+  uint8_t lamp_mode; //Current lamp mode
+  uint8_t amplitude; //Effect amplitude
+  uint8_t brightness; //Effect brightness
+  uint8_t deviceID; //Lamp ID
+  RGBcolor color; //Lamp color
+  uint32_t effect_delay; //Effect delay
+  uint32_t effect_speed; //Effect speed
+  uint32_t effect_amount; //Generic configuration parameter available for different effects. Meaning may vary.
+  float light_amount; //Current light amount
+  String IPAddress_string; //IP address
+  String MACAddress_string; //MAC address
+  const char* ota_url; //URL for OTA sofware updates
+  bool resync; //Resynchronization request pending  
+  system_state_var sysState; //System state
+  init_struct initState; //Initialization state
+};
+
+/* -------- UDP interface description --------- */
+
+/* Generic UDP payload */
+struct udp_payload 
+{
+  uint8_t mask; //To address a payload to specific slaves
+  RGBcolor color;  //Color information
+  uint8_t amplitude; //Amplitude information
+};
+
+/* UDP message structure with single payload */
+struct udp_payload_msg
+{
+  uint8_t msgID;
+  udp_payload payload;
+};
+
+/* UDP message structure with 6 payload elements */
+/* Used to receive color information from up to 6 different spectrum windows */
+struct udp_payload_window_spectrum_msg
+{
+  uint8_t msgID;
+  udp_payload[6] payload; //6 is the maximum allowed nubmer of lamps
+};
+
+/* UDP message structure with a payload element for each number of LEDs */
+struct udp_payload_full_spectrum_msg
+{
+  uint8_t msgID;
+  RGBcolor[NUM_LEDS]; //One RGB value for each LED
+};
+
+/* UDP message to set a mode */
 struct udp_mode_select 
 {
   uint8_t msgID;
   uint8_t mode_select;
+  uint8_t mode_properties; //TODO: expand this when all properties are known
 };
 
+/* UDP synchronization request */
 struct udp_sync_req
 {
   uint8_t msgID;
-  uint8_t delay_ms;
+  uint8_t delay_ms; //Option to add a delay to the synchronization (currently not supported)
 };
 
+/* UDP acknowledgement. Currently not supported */
 struct udp_ack 
 {
   uint8_t msgID;
