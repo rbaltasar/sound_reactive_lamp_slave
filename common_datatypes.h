@@ -60,10 +60,12 @@ enum StaticMode
 enum UDP_Message_Id
 {
   MODE_SELECT = 0,
-  SYNC_REQ = 1,
-  PAYLOAD = 2,
-  ACK = 3,
-  ERR = 4
+  SYNC_REQ = 1,  
+  ACK = 2,
+  ERR = 3,
+  PAYLOAD_SINGLE = 4,
+  PAYLOAD_WINDOW = 5,
+  PAYLOAD_FULL = 6
 };
 
 /* ------- STRUCTS ------- */
