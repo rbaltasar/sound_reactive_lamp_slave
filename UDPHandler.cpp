@@ -2,14 +2,15 @@
 
 UDPHandler::UDPHandler(lamp_status* lamp_status_request,timeSync* timer):
 CommunicationHandler(lamp_status_request,UDP,timer),
-received_mode_select(false)
+received_mode_select(false),
+m_ignoreMsg(true)
 {
-  m_message = new uint8_t[20];
+ 
 }
 
 UDPHandler::~UDPHandler()
 {
-  delete [] m_message;
+
 }
 
 UDP_Message_Id UDPHandler::get_msg_id(uint8_t msgID)
@@ -23,10 +24,12 @@ UDP_Message_Id UDPHandler::get_msg_id(uint8_t msgID)
 void UDPHandler::begin() 
 {
   Serial.println("Starting UDP communication handler");
-  //m_UDP.begin(7001);
+ 
+  /* Ignore the first msg after begin --> may be corrupted data in UDP buffer --> prevent switch to MQTT */
+  m_ignoreMsg = true;
+
   if(m_UDP.listenMulticast(IPAddress(239,1,2,3), 7001)) {
-        //Serial.print("UDP Listening on IP: ");
-        //Serial.println(WiFi.localIP());
+
         m_UDP.onPacket([this](AsyncUDPPacket packet) {
 
             m_message = packet.data();
@@ -57,6 +60,9 @@ void UDPHandler::begin()
 
                 Serial.print("Received Sync Request: ");
                 Serial.println(msg_struct.delay_ms);
+               
+                /* Stop ignoring mode messages */
+                m_ignoreMsg = false;
                   
                 break;
               }
@@ -89,6 +95,9 @@ void UDPHandler::begin()
                 Serial.print("][");
                 Serial.print(msg_struct.amplitude);
                 Serial.println("]");
+               
+                /* Stop ignoring mode messages */
+                m_ignoreMsg = false;
                   
                 break;
               }
@@ -128,6 +137,12 @@ void UDPHandler::network_loop()
   m_lamp_status_request->amplitude = m_lamp_status_request_local.amplitude;
   if(received_mode_select)
   {
+    /* Do not pass any mode information if the message has to be ignored */
+    if(m_ignoreMsg)
+    {
+      m_ignoreMsg = false;
+      return;
+    }
     m_lamp_status_request->lamp_mode = m_lamp_status_request_local.lamp_mode;
     received_mode_select = false;
     Serial.println("Updating shared mode");
