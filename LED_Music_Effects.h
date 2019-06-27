@@ -38,6 +38,7 @@ public:
 
   
   void streaming_1(uint32_t print_delay, uint8_t r, uint8_t g, uint8_t b, uint8_t amplitude);
+  void power_bars(uint32_t print_delay, uint8_t r, uint8_t g, uint8_t b, uint8_t amplitude);
 };
 
 #endif

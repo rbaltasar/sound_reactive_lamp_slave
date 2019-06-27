@@ -174,6 +174,9 @@ void LEDController::feed()
       case STREAMING_1:
         m_music_effects->streaming_1(30, m_lamp_status_request->color.R, m_lamp_status_request->color.G, m_lamp_status_request->color.B, m_lamp_status_request->amplitude);
         break;
+      case POWER_BARS:
+        m_music_effects->power_bars(30, m_lamp_status_request->color.R, m_lamp_status_request->color.G, m_lamp_status_request->color.B, m_lamp_status_request->amplitude);
+        break;
     }
   }
 }

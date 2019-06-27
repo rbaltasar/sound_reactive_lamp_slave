@@ -75,6 +75,26 @@ void LEDMusicEffects::streaming_1(uint32_t print_delay, uint8_t r, uint8_t g, ui
   }
 }
 
+void LEDMusicEffects::power_bars(uint32_t print_delay, uint8_t r, uint8_t g, uint8_t b, uint8_t amplitude)
+{
+  unsigned long now = m_timer->getTime();
+
+  if( (now - m_last_iteration) > print_delay )
+  {
+    m_last_iteration = now;
+
+    for(uint8_t i = 0; i < amplitude; i++)
+    {
+      m_leds[i] = CRGB(r,g,b);
+    }
+    for(uint8_t i = amplitude; i < NUM_LEDS; i++)
+    {
+      m_leds[i] = CRGB(0,0,0);
+    }
+    FastLED.show();
+  }
+}
+
 
 /*********************************************************************************************************
   END FILE

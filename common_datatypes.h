@@ -65,7 +65,7 @@ struct lamp_status
 enum MusicMode
 {
   STREAMING_1 = 0,
-  STREAMING_2 = 1
+  POWER_BARS = 1
 };
 
 enum StaticMode
