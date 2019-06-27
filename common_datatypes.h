@@ -29,8 +29,12 @@ enum COMM_TYPE
 /* Music effects */
 enum MusicMode
 {
-  STREAMING_1 = 0,
-  POWER_BARS = 1
+  BUBBLE = 0,
+  ENERGY_BAR = 1,
+  ENERGY_BAR_COLOR = 2,
+  SPECTRUM_BAR = 3,
+  SPECTRUM_BAR_COLOR = 4,
+  FULL_SPECTRUM_COLOR = 5
 };
 
 /* Static effects */
@@ -100,7 +104,7 @@ struct lamp_status
   float light_amount; //Current light amount
   String IPAddress_string; //IP address
   String MACAddress_string; //MAC address
-  const char* ota_url; //URL for OTA sofware updates
+  String ota_url; //URL for OTA sofware updates
   bool resync; //Resynchronization request pending  
   system_state_var sysState; //System state
   init_struct initState; //Initialization state
@@ -128,14 +132,14 @@ struct udp_payload_msg
 struct udp_payload_window_spectrum_msg
 {
   uint8_t msgID;
-  udp_payload[6] payload; //6 is the maximum allowed nubmer of lamps
+  udp_payload payload[6]; //6 is the maximum allowed nubmer of lamps
 };
 
 /* UDP message structure with a payload element for each number of LEDs */
 struct udp_payload_full_spectrum_msg
 {
   uint8_t msgID;
-  RGBcolor[NUM_LEDS]; //One RGB value for each LED
+  RGBcolor color[NUM_LEDS]; //One RGB value for each LED
 };
 
 /* UDP message to set a mode */

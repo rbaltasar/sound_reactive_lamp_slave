@@ -21,6 +21,7 @@ private:
   uint8_t* m_message;
   lamp_status m_lamp_status_request_local;
   bool received_mode_select;
+  bool m_ignoreMsg;
   
   void synchronize(unsigned long delay_ms);
   UDP_Message_Id get_msg_id(uint8_t msgID);

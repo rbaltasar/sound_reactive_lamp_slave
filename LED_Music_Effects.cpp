@@ -63,7 +63,7 @@ void LEDMusicEffects::shift_leds(uint8_t positions, const bool right, const uint
   delay(delay_ms);
 }
 
-void LEDMusicEffects::streaming_1(uint32_t print_delay, uint8_t r, uint8_t g, uint8_t b, uint8_t amplitude)
+void LEDMusicEffects::bubble_effect(uint32_t print_delay, uint8_t r, uint8_t g, uint8_t b, uint8_t amplitude)
 {
   unsigned long now = m_timer->getTime();
 
@@ -75,7 +75,7 @@ void LEDMusicEffects::streaming_1(uint32_t print_delay, uint8_t r, uint8_t g, ui
   }
 }
 
-void LEDMusicEffects::power_bars(uint32_t print_delay, uint8_t r, uint8_t g, uint8_t b, uint8_t amplitude)
+void LEDMusicEffects::power_bars_effect(uint32_t print_delay, uint8_t r, uint8_t g, uint8_t b, uint8_t amplitude)
 {
   unsigned long now = m_timer->getTime();
 

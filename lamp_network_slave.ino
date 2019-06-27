@@ -47,7 +47,6 @@ void setup()
   setup_wifi();
   /* Start with MQTT communication. Create object */  
   communication_handler = &mqtt_handler;
-  communication_handler->begin();
   /* Setup the hardware */
   setup_hardware(); 
 
@@ -77,7 +76,7 @@ void setup()
   lamp_state.val.initState.isCompleted = false;
 
   /* Setup finished. Show leds */
-  LED_controller.setLeds(lamp_state.val.color,0,NUM_LEDS/3);
+  //LED_controller.setLeds(lamp_state.val.color,0,NUM_LEDS/3);
 }
 
 /* Get the IP address in String format */
@@ -166,13 +165,16 @@ void setup_hardware()
 /* Setup the OTA software update web server */
 void setup_OTA()
 {
-  updater.begin(lamp_state.val.ota_url);
+  updater.begin(lamp_state.val.ota_url.c_str());
 }
 
 /* Update the current lamp mode */
 /* Switch between communication handlers when necessary */
 void mode_update()
 {
+  Serial.print("Received change request to mode ");
+  Serial.println(lamp_state.val.lamp_mode);
+
   /* Finish previous effect */
   LED_controller.end_effect();
   
@@ -205,9 +207,7 @@ void mode_update()
     lamp_state.val.color.B = B_DEFAULT;     
   }
   
-  Serial.print("Received change request to mode ");
-  Serial.println(lamp_state.val.lamp_mode);
-  
+    
   /* Shadow current mode for evaluation of new requests */
   lamp_state.old.lamp_mode = lamp_state.val.lamp_mode; 
   
@@ -279,7 +279,7 @@ void initComm()
   if(!lamp_state.val.initState.hasStarted)
   {
     /* Give visual feedback */
-    LED_controller.setLeds(lamp_state.val.color,0,(NUM_LEDS*2)/3);
+    //LED_controller.setLeds(lamp_state.val.color,0,(NUM_LEDS*2)/3);
 
     /* Initiate handshake. TODO: check that MQTT communication is being used */
     communication_handler->publish_initcomm();

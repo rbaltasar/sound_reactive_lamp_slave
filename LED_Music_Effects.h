@@ -37,8 +37,8 @@ public:
   void resync();
 
   
-  void streaming_1(uint32_t print_delay, uint8_t r, uint8_t g, uint8_t b, uint8_t amplitude);
-  void power_bars(uint32_t print_delay, uint8_t r, uint8_t g, uint8_t b, uint8_t amplitude);
+  void bubble_effect(uint32_t print_delay, uint8_t r, uint8_t g, uint8_t b, uint8_t amplitude);
+  void power_bars_effect(uint32_t print_delay, uint8_t r, uint8_t g, uint8_t b, uint8_t amplitude);
 };
 
 #endif

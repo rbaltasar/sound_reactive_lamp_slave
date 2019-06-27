@@ -171,11 +171,19 @@ void LEDController::feed()
   {
      switch(m_mode - 100)
     {
-      case STREAMING_1:
-        m_music_effects->streaming_1(30, m_lamp_status_request->color.R, m_lamp_status_request->color.G, m_lamp_status_request->color.B, m_lamp_status_request->amplitude);
+      case BUBBLE:
+        m_music_effects->bubble_effect(30, m_lamp_status_request->color.R, m_lamp_status_request->color.G, m_lamp_status_request->color.B, m_lamp_status_request->amplitude);
         break;
-      case POWER_BARS:
-        m_music_effects->power_bars(30, m_lamp_status_request->color.R, m_lamp_status_request->color.G, m_lamp_status_request->color.B, m_lamp_status_request->amplitude);
+      case ENERGY_BAR:
+        m_music_effects->power_bars_effect(30, m_lamp_status_request->color.R, m_lamp_status_request->color.G, m_lamp_status_request->color.B, m_lamp_status_request->amplitude);
+        break;
+      case ENERGY_BAR_COLOR:
+        break;
+      case SPECTRUM_BAR:
+        break;
+      case SPECTRUM_BAR_COLOR:
+        break;
+      case FULL_SPECTRUM_COLOR:
         break;
     }
   }

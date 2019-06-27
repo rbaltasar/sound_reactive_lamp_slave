@@ -17,7 +17,10 @@ UDP_Message_Id UDPHandler::get_msg_id(uint8_t msgID)
 {
   if(msgID == 0) return MODE_SELECT;
   else if(msgID == 1) return SYNC_REQ;
-  else if(msgID == 2) return PAYLOAD;
+  else if(msgID == 2) return ACK;
+  else if(msgID == 4) return PAYLOAD_SINGLE;
+  else if(msgID == 5) return PAYLOAD_WINDOW;
+  else if(msgID == 5) return PAYLOAD_FULL;
   else return ERR;  
 }
 
@@ -27,6 +30,7 @@ void UDPHandler::begin()
  
   /* Ignore the first msg after begin --> may be corrupted data in UDP buffer --> prevent switch to MQTT */
   m_ignoreMsg = true;
+  received_mode_select = false;
 
   if(m_UDP.listenMulticast(IPAddress(239,1,2,3), 7001)) {
 
@@ -66,12 +70,12 @@ void UDPHandler::begin()
                   
                 break;
               }
-              case PAYLOAD:
+              case PAYLOAD_SINGLE:
               {
-                udp_payload msg_struct = *((udp_payload*)m_message);
+                udp_payload_msg msg_struct = *((udp_payload_msg*)m_message);
 
                 /* Check if this message is targeted for this node */
-                if(!is_targeted_device(msg_struct.mask,m_lamp_status_request->deviceID))
+                if(!is_targeted_device(msg_struct.payload.mask,m_lamp_status_request->deviceID))
                 {
                   m_lamp_status_request_local.color.R = 0;
                   m_lamp_status_request_local.color.G = 0;
@@ -80,20 +84,44 @@ void UDPHandler::begin()
                 }
                 else
                 {
-                  m_lamp_status_request_local.color.R = msg_struct.red;
-                  m_lamp_status_request_local.color.G = msg_struct.green;
-                  m_lamp_status_request_local.color.B = msg_struct.blue;
-                  m_lamp_status_request_local.amplitude = msg_struct.amplitude;
+                  m_lamp_status_request_local.color.R = msg_struct.payload.color.R;
+                  m_lamp_status_request_local.color.G = msg_struct.payload.color.G;
+                  m_lamp_status_request_local.color.B = msg_struct.payload.color.B;
+                  m_lamp_status_request_local.amplitude = msg_struct.payload.amplitude;
                 }
 
-                Serial.print("Received Payload: [");
-                Serial.print(msg_struct.red);
+                Serial.print("Received Single Payload msg: [");
+                Serial.print(msg_struct.payload.color.R);
                 Serial.print("][");
-                Serial.print(msg_struct.green);
+                Serial.print(msg_struct.payload.color.G);
                 Serial.print("][");
-                Serial.print(msg_struct.blue);
+                Serial.print(msg_struct.payload.color.B);
                 Serial.print("][");
-                Serial.print(msg_struct.amplitude);
+                Serial.print(msg_struct.payload.amplitude);
+                Serial.println("]");
+               
+                /* Stop ignoring mode messages */
+                m_ignoreMsg = false;
+                  
+                break;
+              }
+              case PAYLOAD_WINDOW:
+              {
+                udp_payload_window_spectrum_msg msg_struct = *((udp_payload_window_spectrum_msg*)m_message);
+
+                Serial.print("Received Window Payload msg: [");
+                Serial.println("]");
+               
+                /* Stop ignoring mode messages */
+                m_ignoreMsg = false;
+                  
+                break;
+              }
+              case PAYLOAD_FULL:
+              {
+                udp_payload_full_spectrum_msg msg_struct = *((udp_payload_full_spectrum_msg*)m_message);
+
+                Serial.print("Received Full Payload msg: [");
                 Serial.println("]");
                
                 /* Stop ignoring mode messages */
@@ -140,6 +168,7 @@ void UDPHandler::network_loop()
     /* Do not pass any mode information if the message has to be ignored */
     if(m_ignoreMsg)
     {
+      Serial.println("Received a mode change request but will be ignored");
       m_ignoreMsg = false;
       return;
     }

@@ -141,14 +141,17 @@ void MQTTHandler::callback(char* topic, byte* payload, unsigned int length) {
   else if(strcmp(topic,"lamp_network/initcommrx") == 0)
   {
     /* Check if the handshake is addressed to this node. Before ID assignation the MAC address is the unique identifier */
-    const char* mac_request = root["mac_origin"];
+    const char* mac_request = root["mac"];
     if(strcmp(mac_request,m_lamp_status_request->MACAddress_string.c_str()) == 0)
     {
       /* Update shared memory */
-      m_lamp_status_request->deviceID = root["deviceID"];
-      m_lamp_status_request->ota_url = root["OTA_URL"];
+      m_lamp_status_request->deviceID = root["id"];
+      String ota_url = "lamp" + String(m_lamp_status_request->deviceID);
+      m_lamp_status_request->ota_url = ota_url.c_str();//root["url"];
       m_lamp_status_request->lamp_mode = root["mode"];      
       m_lamp_status_request->initState.isCompleted = true;
+
+      Serial.println(m_lamp_status_request->ota_url);
     }     
   }
   
@@ -226,6 +229,12 @@ void MQTTHandler::reconnect()
 /* Publish initial communication handshake */
 void MQTTHandler::publish_initcomm()
 {
+  m_client.subscribe("lamp_network/initcommrx");
+  
+  delay(100);
+
+  m_last_alive_rx = millis();
+  
   StaticJsonBuffer<256> jsonBuffer_send;
   JsonObject& root_send = jsonBuffer_send.createObject();
 
@@ -245,6 +254,9 @@ void MQTTHandler::finish_initcomm()
 {
   /* Unsubscribe to communication handshake topic */
   m_client.unsubscribe("lamp_network/initcommrx");
+
+  /* Begin the normal communication */
+  begin();
 }
 
 /*********************************************************************************************************
