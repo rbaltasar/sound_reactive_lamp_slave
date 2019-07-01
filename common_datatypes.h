@@ -140,6 +140,7 @@ struct udp_payload_msg
 struct udp_payload_window_spectrum_msg
 {
   uint8_t msgID;
+  uint8_t numMsg;
   udp_payload* payload;
 };
 
@@ -147,7 +148,7 @@ struct udp_payload_window_spectrum_msg
 struct udp_payload_full_spectrum_msg
 {
   uint8_t msgID;
-  RGBcolor color[NUM_LEDS]; //One RGB value for each LED
+  RGBcolor* color; //One RGB value for each LED
 };
 
 /* UDP message to set a mode */
