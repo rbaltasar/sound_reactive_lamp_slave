@@ -122,23 +122,43 @@ void LEDMusicEffects::generate_static_colors(uint8_t r_base, uint8_t g_base, uin
   /* Do something with m_static_color */
 }
 
+bool LEDMusicEffects::is_update(uint8_t r, uint8_t g, uint8_t b, uint8_t amplitude)
+{
+  bool retVal = false;
+  
+  uint8_t r_old = music_effect_mem[0];
+  uint8_t g_old = music_effect_mem[1];
+  uint8_t b_old = music_effect_mem[2];
+  uint8_t ampl_old = music_effect_mem[3];
+  
+  if( (r_old != r) || (g_old != g) || (b_old != b) )
+  {
+    /* Update effect memory */
+    music_effect_mem[0] = r_base;
+    music_effect_mem[1] = g_base;
+    music_effect_mem[2] = b_base;
+    
+    retVal = true;
+  } 
+  else if( (amplitude != 0xFF) && (ampl_old != amplitude) )
+  {
+    music_effect_mem[3] = amplitude;
+    
+    retVal = true;
+  }
+  
+  return retVal;
+}
+
 void LEDMusicEffects::print_amplitude_static(uint8_t led_start, uint8_t led_end, const bool top, uint8_t amplitude, uint8_t r_base, uint8_t g_base, uint8_t b_base)
 {
   
-  /* Check if the base color has been changed */
-  uint8_t r_base_old = music_effect_mem[2];
-  uint8_t g_base_old = music_effect_mem[3];
-  uint8_t b_base_old = music_effect_mem[4];
-  
-  if( (r_base_old != r_base) || (g_base_old != g_base) || (b_base_old != b_base) )
+  /* Check if the base color has been changed  */
+  if(is_update(r_base,g_base,b_base,0xFF))
   {
     /* Generate new static colors based on the base color */
-    generate_static_colors(r_base,g_base,b_base);
-    /* Update effect memory */
-    music_effect_mem[2] = r_base;
-    music_effect_mem[3] = g_base;
-    music_effect_mem[4] = b_base;
-  }  
+     generate_static_colors(r_base,g_base,b_base);
+  }
  
   if(top)
   {    
@@ -163,15 +183,24 @@ void LEDMusicEffects::print_amplitude_static(uint8_t led_start, uint8_t led_end,
     }    
   }
    FastLED.show();  
-}
+} 
+  
 
 void LEDMusicEffects::power_bars_effect(uint32_t print_delay, uint8_t r, uint8_t g, uint8_t b, uint8_t amplitude)
 {
   unsigned long now = m_timer->getTime();
 
+  /* Time to update the LED status */
   if( (now - m_last_iteration) > print_delay )
   {
+    /* Reset timer */
     m_last_iteration = now;
+    
+    /* If there is no update since last iteration, perform a decay effect by reducing the requested amplitude one unit */
+    if( !is_update(r,g,b,amplitude) )
+    {
+      amplitude--;
+    }      
 
     if(effect_type == COLOR)
     {
