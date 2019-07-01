@@ -54,6 +54,7 @@ const char masterIP[] = "192.168.2.120";
 #define SAMPLING_FREQUENCY 200000
 
 //---------- Debugging ------------------
+#define DEBUG_UDP 1
 //#define DEBUG_TRACES_TIME
 //#define DEBUG_TRACES_FREQ
 //#define DEBUG_TRACES_FREQ_SPECTRUM
