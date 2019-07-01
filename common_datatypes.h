@@ -37,6 +37,14 @@ enum MusicMode
   FULL_SPECTRUM_COLOR = 5
 };
 
+/* Music effect direction */
+enum DirectionType
+{
+  UP = 0,
+  DOWN = 1,
+  MIDDLE = 2
+};
+
 /* Static effects */
 enum StaticMode
 {
