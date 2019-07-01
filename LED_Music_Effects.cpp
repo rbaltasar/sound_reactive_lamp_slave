@@ -27,19 +27,22 @@ void LEDMusicEffects::resync()
   m_last_iteration = m_timer->getTime();
 }
 
-void LEDMusicEffects::shift_leds(uint8_t positions, const bool right, const uint8_t delay_ms, const uint8_t R_in, const uint8_t G_in, const uint8_t B_in)
+void LEDMusicEffects::shift_leds(uint8_t led_start, uint8_t led_end, uint8_t positions, const bool top, const uint8_t delay_ms, const uint8_t R_in, const uint8_t G_in, const uint8_t B_in)
 {
-  if(positions == 0) positions = 1;
+  if(led_end <= led_start) return;
   
-  if(right)
+  if(positions == 0) positions = 1;
+  if( (led_end - led_start) < positions ) positions = 1;
+  
+  if(top)
   {
-    for(uint8_t j = NUM_LEDS - 1; j >= positions ; j--)
+    for(uint8_t j = led_end - 1; j >= positions ; j--)
     {
       m_leds[j] = m_leds[j-positions];
       //Serial.println(j);
       //delay(100);
     }
-    for(uint8_t j = 0; j < positions; j++)
+    for(uint8_t j = led_start; j < positions; j++)
     {
       m_leds[j] = CRGB(R_in,G_in,B_in);
       //Serial.println(j);
@@ -49,11 +52,11 @@ void LEDMusicEffects::shift_leds(uint8_t positions, const bool right, const uint
 
   else
   {
-    for(uint8_t j = 0; j < (NUM_LEDS - positions); j++)
+    for(uint8_t j = led_start; j < (led_end - positions); j++)
     {
       m_leds[j] = m_leds[j+positions];
     }
-    for(uint8_t j = NUM_LEDS - 1; j < NUM_LEDS - positions; j--)
+    for(uint8_t j = led_end - 1; j < led_end - positions; j--)
     {
       m_leds[j] = CRGB(R_in,G_in,B_in);
     }
@@ -63,7 +66,7 @@ void LEDMusicEffects::shift_leds(uint8_t positions, const bool right, const uint
   delay(delay_ms);
 }
 
-void LEDMusicEffects::bubble_effect(uint32_t print_delay, uint8_t r, uint8_t g, uint8_t b, uint8_t amplitude)
+void LEDMusicEffects::bubble_effect(uint32_t print_delay, uint8_t r, uint8_t g, uint8_t b, uint8_t amplitude, DirectionType direction)
 {
   unsigned long now = m_timer->getTime();
 
@@ -71,7 +74,19 @@ void LEDMusicEffects::bubble_effect(uint32_t print_delay, uint8_t r, uint8_t g, 
   {
     m_last_iteration = now;
     
-    shift_leds(amplitude, true, 0, r, g, b);
+    if(direction == UP)
+    {
+      shift_leds(0, NUM_LEDS, amplitude, true, 0, r, g, b);
+    }
+    else if(direction == DOWN)
+    {
+      shift_leds(0, NUM_LEDS, amplitude, true, 0, r, g, b);
+    }
+    if(direction == MIDDLE)
+    {
+      shift_leds(NUM_LEDS / 2, NUM_LEDS, amplitude, true, 0, r, g, b);
+      shift_leds(0, NUM_LEDS / 2 , amplitude, false, 0, r, g, b);
+    }
   }
 }
 
