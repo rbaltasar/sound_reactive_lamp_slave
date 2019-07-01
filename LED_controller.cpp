@@ -172,13 +172,14 @@ void LEDController::feed()
      switch(m_mode - 100)
     {
       case BUBBLE:
-        m_music_effects->bubble_effect(30, m_lamp_status_request->color.R, m_lamp_status_request->color.G, m_lamp_status_request->color.B, m_lamp_status_request->amplitude);
-        break;
-      case ENERGY_BAR:
-      case ENERGY_BAR_FAST:
-        m_music_effects->power_bars_effect(30, m_lamp_status_request->color.R, m_lamp_status_request->color.G, m_lamp_status_request->color.B, m_lamp_status_request->amplitude);
+        m_music_effects->bubble_effect(30, m_lamp_status_request->color.R, m_lamp_status_request->color.G, m_lamp_status_request->color.B, m_lamp_status_request->amplitude, m_lamp_status_request->effect_direction);
         break;
       case ENERGY_BAR_COLOR:
+      case ENERGY_BAR_FAST:
+        m_music_effects->power_bars_effect(30, m_lamp_status_request->color.R, m_lamp_status_request->color.G, m_lamp_status_request->color.B, m_lamp_status_request->amplitude, m_lamp_status_request->effect_direction, COLOR);
+        break;
+      case ENERGY_BAR:
+        m_music_effects->power_bars_effect(30, m_lamp_status_request->color.R, m_lamp_status_request->color.G, m_lamp_status_request->color.B, m_lamp_status_request->amplitude, m_lamp_status_request->effect_direction, STATIC);
         break;
       case SPECTRUM_BAR:
         break;

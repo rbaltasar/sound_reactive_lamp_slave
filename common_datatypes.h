@@ -38,6 +38,21 @@ enum MusicMode
   ENERGY_BAR_FAST = 6
 };
 
+/* Music effect direction */
+enum DirectionType
+{
+  UP = 0,
+  DOWN = 1,
+  MIDDLE = 2
+};
+
+/* Music effec type */
+enum EffectType
+{
+  COLOR = 0,
+  STATIC = 1
+};
+
 /* Static effects */
 enum StaticMode
 {
@@ -70,7 +85,8 @@ enum UDP_Message_Id
   ERR = 3,
   PAYLOAD_SINGLE = 4,
   PAYLOAD_WINDOW = 5,
-  PAYLOAD_FULL = 6
+  PAYLOAD_FULL = 6,
+  CONFIGURATION = 7,
 };
 
 /* ------- STRUCTS ------- */
@@ -102,6 +118,8 @@ struct lamp_status
   uint32_t effect_delay; //Effect delay
   uint32_t effect_speed; //Effect speed
   uint32_t effect_amount; //Generic configuration parameter available for different effects. Meaning may vary.
+  DirectionType effect_direction;
+  EffectType effect_type;
   float light_amount; //Current light amount
   String IPAddress_string; //IP address
   String MACAddress_string; //MAC address
@@ -133,14 +151,15 @@ struct udp_payload_msg
 struct udp_payload_window_spectrum_msg
 {
   uint8_t msgID;
-  udp_payload payload[6]; //6 is the maximum allowed nubmer of lamps
+  uint8_t numMsg;
+  udp_payload* payload;
 };
 
 /* UDP message structure with a payload element for each number of LEDs */
 struct udp_payload_full_spectrum_msg
 {
   uint8_t msgID;
-  RGBcolor color[NUM_LEDS]; //One RGB value for each LED
+  RGBcolor* color; //One RGB value for each LED
 };
 
 /* UDP message to set a mode */
@@ -148,7 +167,14 @@ struct udp_mode_select
 {
   uint8_t msgID;
   uint8_t mode_select;
-  uint8_t mode_properties; //TODO: expand this when all properties are known
+};
+
+/* UDP message to set a mode */
+struct udp_music_mode_configuration 
+{
+  uint8_t msgID;
+  uint8_t effect_delay;
+  uint8_t effect_direction;
 };
 
 /* UDP synchronization request */

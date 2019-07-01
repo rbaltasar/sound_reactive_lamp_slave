@@ -146,7 +146,7 @@ void MQTTHandler::callback(char* topic, byte* payload, unsigned int length) {
     {
       /* Update shared memory */
       m_lamp_status_request->deviceID = root["id"];
-      String ota_url = "lamp" + String(m_lamp_status_request->deviceID);
+      String ota_url = "lamp" + String(m_lamp_status_request->deviceID + 1);
       m_lamp_status_request->ota_url = ota_url.c_str();//root["url"];
       m_lamp_status_request->lamp_mode = root["mode"];      
       m_lamp_status_request->initState.isCompleted = true;
@@ -229,9 +229,10 @@ void MQTTHandler::reconnect()
 /* Publish initial communication handshake */
 void MQTTHandler::publish_initcomm()
 {
-  m_client.subscribe("lamp_network/initcommrx");
+
+  Serial.println("Starting communication handshake");
   
-  delay(100);
+  m_client.subscribe("lamp_network/initcommrx");
 
   m_last_alive_rx = millis();
   
