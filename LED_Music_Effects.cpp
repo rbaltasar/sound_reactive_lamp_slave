@@ -117,8 +117,10 @@ void LEDMusicEffects::print_amplitude_color(uint8_t led_start, uint8_t led_end, 
    FastLED.show();  
 }
 
+
 void LEDMusicEffects::generate_static_colors(uint8_t r_base, uint8_t g_base, uint8_t b_base)
 {
+
   /* Do something with m_static_color */
 }
 
