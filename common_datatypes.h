@@ -140,7 +140,7 @@ struct udp_payload_msg
 struct udp_payload_window_spectrum_msg
 {
   uint8_t msgID;
-  udp_payload payload[6]; //6 is the maximum allowed nubmer of lamps
+  udp_payload* payload;
 };
 
 /* UDP message structure with a payload element for each number of LEDs */
