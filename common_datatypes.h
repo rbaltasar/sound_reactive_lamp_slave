@@ -34,7 +34,8 @@ enum MusicMode
   ENERGY_BAR_COLOR = 2,
   SPECTRUM_BAR = 3,
   SPECTRUM_BAR_COLOR = 4,
-  FULL_SPECTRUM_COLOR = 5
+  FULL_SPECTRUM_COLOR = 5,
+  ENERGY_BAR_FAST = 6
 };
 
 /* Static effects */

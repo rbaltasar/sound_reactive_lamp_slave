@@ -2,8 +2,7 @@
 
 UDPHandler::UDPHandler(lamp_status* lamp_status_request,timeSync* timer):
 CommunicationHandler(lamp_status_request,UDP,timer),
-received_mode_select(false),
-m_ignoreMsg(true)
+received_mode_select(false)
 {
  
 }
@@ -29,7 +28,6 @@ void UDPHandler::begin()
   Serial.println("Starting UDP communication handler");
  
   /* Ignore the first msg after begin --> may be corrupted data in UDP buffer --> prevent switch to MQTT */
-  m_ignoreMsg = true;
   received_mode_select = false;
 
   if(m_UDP.listenMulticast(IPAddress(239,1,2,3), 7001)) {
@@ -63,10 +61,8 @@ void UDPHandler::begin()
                 m_lamp_status_request_local.resync = true;
 
                 Serial.print("Received Sync Request: ");
-                Serial.println(msg_struct.delay_ms);
-               
-                /* Stop ignoring mode messages */
-                m_ignoreMsg = false;
+                Serial.println(msg_struct.delay_ms);         
+            
                   
                 break;
               }
@@ -99,10 +95,7 @@ void UDPHandler::begin()
                 Serial.print("][");
                 Serial.print(msg_struct.payload.amplitude);
                 Serial.println("]");
-               
-                /* Stop ignoring mode messages */
-                m_ignoreMsg = false;
-                  
+                   
                 break;
               }
               case PAYLOAD_WINDOW:
@@ -111,9 +104,6 @@ void UDPHandler::begin()
 
                 Serial.print("Received Window Payload msg: [");
                 Serial.println("]");
-               
-                /* Stop ignoring mode messages */
-                m_ignoreMsg = false;
                   
                 break;
               }
@@ -124,8 +114,6 @@ void UDPHandler::begin()
                 Serial.print("Received Full Payload msg: [");
                 Serial.println("]");
                
-                /* Stop ignoring mode messages */
-                m_ignoreMsg = false;
                   
                 break;
               }
@@ -165,13 +153,6 @@ void UDPHandler::network_loop()
   m_lamp_status_request->amplitude = m_lamp_status_request_local.amplitude;
   if(received_mode_select)
   {
-    /* Do not pass any mode information if the message has to be ignored */
-    if(m_ignoreMsg)
-    {
-      Serial.println("Received a mode change request but will be ignored");
-      m_ignoreMsg = false;
-      return;
-    }
     m_lamp_status_request->lamp_mode = m_lamp_status_request_local.lamp_mode;
     received_mode_select = false;
     Serial.println("Updating shared mode");

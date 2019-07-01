@@ -175,6 +175,7 @@ void LEDController::feed()
         m_music_effects->bubble_effect(30, m_lamp_status_request->color.R, m_lamp_status_request->color.G, m_lamp_status_request->color.B, m_lamp_status_request->amplitude);
         break;
       case ENERGY_BAR:
+      case ENERGY_BAR_FAST:
         m_music_effects->power_bars_effect(30, m_lamp_status_request->color.R, m_lamp_status_request->color.G, m_lamp_status_request->color.B, m_lamp_status_request->amplitude);
         break;
       case ENERGY_BAR_COLOR:

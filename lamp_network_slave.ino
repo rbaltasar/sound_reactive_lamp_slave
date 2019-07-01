@@ -184,7 +184,7 @@ void mode_update()
     /* Stop MQTT communication handler */
     communication_handler->stop();
     /* Assign UDP communication handler */
-    communication_handler = &udp_handler;    
+    communication_handler = &udp_handler;
     /* Start UDP communication handler */
     communication_handler->begin();
   }
@@ -275,7 +275,8 @@ void status_update()
 /* Handle initial communication handshake to ensurue stable MQTT communication with the broker */
 void initComm()
 {
-  /* Send a MQTT request */
+
+   /* Send a MQTT request */
   if(!lamp_state.val.initState.hasStarted)
   {
     /* Give visual feedback */
