@@ -43,9 +43,9 @@ void UDPHandler::begin()
               case MODE_SELECT:
               {
                 
-                udp_mode_select msg_struct = *((udp_mode_select*)m_message);
+                udp_mode_select* msg_struct = (udp_mode_select*)m_message;
 
-                m_lamp_status_request_local.lamp_mode = msg_struct.mode_select;
+                m_lamp_status_request_local.lamp_mode = msg_struct->mode_select;
 
                 received_mode_select = true;
                 
@@ -56,14 +56,14 @@ void UDPHandler::begin()
               }
               case SYNC_REQ:
               {
-                udp_sync_req msg_struct = *((udp_sync_req*)m_message);
+                udp_sync_req* msg_struct = (udp_sync_req*)m_message;
 
                 //synchronize(msg_struct.delay_ms);
 
                 m_lamp_status_request_local.resync = true;
 
                 Serial.print("Received Sync Request: ");
-                Serial.println(msg_struct.delay_ms);
+                Serial.println(msg_struct->delay_ms);
                
                 /* Stop ignoring mode messages */
                 m_ignoreMsg = false;
@@ -72,10 +72,10 @@ void UDPHandler::begin()
               }
               case PAYLOAD_SINGLE:
               {
-                udp_payload_msg msg_struct = *((udp_payload_msg*)m_message);
+                udp_payload_msg* msg_struct = (udp_payload_msg*)m_message;
 
                 /* Check if this message is targeted for this node */
-                if(!is_targeted_device(msg_struct.payload.mask,m_lamp_status_request->deviceID))
+                if(!is_targeted_device(msg_struct->payload.mask,m_lamp_status_request->deviceID))
                 {
                   m_lamp_status_request_local.color.R = 0;
                   m_lamp_status_request_local.color.G = 0;
@@ -84,22 +84,22 @@ void UDPHandler::begin()
                 }
                 else
                 {
-                  m_lamp_status_request_local.color.R = msg_struct.payload.color.R;
-                  m_lamp_status_request_local.color.G = msg_struct.payload.color.G;
-                  m_lamp_status_request_local.color.B = msg_struct.payload.color.B;
-                  m_lamp_status_request_local.amplitude = msg_struct.payload.amplitude;
+                  m_lamp_status_request_local.color.R = msg_struct->payload.color.R;
+                  m_lamp_status_request_local.color.G = msg_struct->payload.color.G;
+                  m_lamp_status_request_local.color.B = msg_struct->payload.color.B;
+                  m_lamp_status_request_local.amplitude = msg_struct->payload.amplitude;
                 }
-
+ #if (DEBUG_UDP == 1)
                 Serial.print("Received Single Payload msg: [");
-                Serial.print(msg_struct.payload.color.R);
+                Serial.print(msg_struct->payload.color.R);
                 Serial.print("][");
-                Serial.print(msg_struct.payload.color.G);
+                Serial.print(msg_struct->payload.color.G);
                 Serial.print("][");
-                Serial.print(msg_struct.payload.color.B);
+                Serial.print(msg_struct->payload.color.B);
                 Serial.print("][");
-                Serial.print(msg_struct.payload.amplitude);
+                Serial.print(msg_struct->payload.amplitude);
                 Serial.println("]");
-               
+#endif             
                 /* Stop ignoring mode messages */
                 m_ignoreMsg = false;
                   
@@ -107,11 +107,33 @@ void UDPHandler::begin()
               }
               case PAYLOAD_WINDOW:
               {
-                udp_payload_window_spectrum_msg msg_struct = *((udp_payload_window_spectrum_msg*)m_message);
-
-                Serial.print("Received Window Payload msg: [");
-                Serial.println("]");
+                udp_payload_window_spectrum_msg msg_struct = (udp_payload_window_spectrum_msg*)m_message;
                
+               /* Get the size of the window */
+               uint8_t window_size = msg_struct->msgSize;
+               
+               /* Loop over all the received windows */
+               for(uint8_t i=0; i < msgSize; i++)
+               {
+#if (DEBUG_UDP == 1)
+                  Serial.print("Window ");
+                  Serial.print(i);
+                  Serial.print(" with mask ");
+                  Serial.println(msg_struct->payload[i].mask);
+                  Serial.print("   Received Window Payload msg: [");
+                  Serial.print(msg_struct->payload[i].color.R);
+                  Serial.print("][");
+                  Serial.print(msg_struct->payload[i].color.G);
+                  Serial.print("][");
+                  Serial.print(msg_struct->payload[i].color.B);
+                  Serial.print("][");
+                  Serial.print(msg_struct->payload[i].color.amplitude);
+                  Serial.print("][");
+                  Serial.println("]");
+#endif                
+                  /* Break with the first window that fits to the node ID */
+               }
+
                 /* Stop ignoring mode messages */
                 m_ignoreMsg = false;
                   
