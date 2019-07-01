@@ -90,6 +90,81 @@ void LEDMusicEffects::bubble_effect(uint32_t print_delay, uint8_t r, uint8_t g, 
   }
 }
 
+void LEDMusicEffects::print_amplitude_color(uint8_t led_start, uint8_t led_end, const bool top, uint8_t amplitude, uint8_t r, uint8_t g, uint8_t b)
+{
+  if(top)
+  {    
+    for(uint8_t i = led_start; i < amplitude; i++)
+    {
+      m_leds[i] = CRGB(r,g,b);
+    }
+    for(uint8_t i = amplitude; i < led_end; i++)
+    {
+      m_leds[i] = CRGB(0,0,0);
+    }
+  }
+  else
+  {
+    for(uint8_t i = led_start; i < (led_end - amplitude); i++)
+    {
+      m_leds[i] = CRGB(0,0,0);
+    }
+    for(uint8_t i = (led_end - amplitude); i < led_end; i++)
+    {
+      m_leds[i] = CRGB(r,g,b);
+    }    
+  }
+   FastLED.show();  
+}
+
+void LEDMusicEffects::generate_static_colors(uint8_t r_base, uint8_t g_base, uint8_t b_base)
+{
+  /* Do something with m_static_color */
+}
+
+void LEDMusicEffects::print_amplitude_static(uint8_t led_start, uint8_t led_end, const bool top, uint8_t amplitude, uint8_t r_base, uint8_t g_base, uint8_t b_base)
+{
+  
+  /* Check if the base color has been changed */
+  uint8_t r_base_old = music_effect_mem[2];
+  uint8_t g_base_old = music_effect_mem[3];
+  uint8_t b_base_old = music_effect_mem[4];
+  
+  if( (r_base_old != r_base) || (g_base_old != g_base) || (b_base_old != b_base) )
+  {
+    /* Generate new static colors based on the base color */
+    generate_static_colors(r_base,g_base,b_base);
+    /* Update effect memory */
+    music_effect_mem[2] = r_base;
+    music_effect_mem[3] = g_base;
+    music_effect_mem[4] = b_base;
+  }  
+ 
+  if(top)
+  {    
+    for(uint8_t i = led_start; i < amplitude; i++)
+    {
+      m_leds[i] = m_static_color[i];
+    }
+    for(uint8_t i = amplitude; i < led_end; i++)
+    {
+      m_leds[i] = CRGB(0,0,0);
+    }
+  }
+  else
+  {
+    for(uint8_t i = led_start; i < (led_end - amplitude); i++)
+    {
+      m_leds[i] = CRGB(0,0,0);
+    }
+    for(uint8_t i = (led_end - amplitude); i < led_end; i++)
+    {
+      m_leds[i] = m_static_color[i];
+    }    
+  }
+   FastLED.show();  
+}
+
 void LEDMusicEffects::power_bars_effect(uint32_t print_delay, uint8_t r, uint8_t g, uint8_t b, uint8_t amplitude)
 {
   unsigned long now = m_timer->getTime();
@@ -98,15 +173,38 @@ void LEDMusicEffects::power_bars_effect(uint32_t print_delay, uint8_t r, uint8_t
   {
     m_last_iteration = now;
 
-    for(uint8_t i = 0; i < amplitude; i++)
+    if(effect_type == COLOR)
     {
-      m_leds[i] = CRGB(r,g,b);
+      if(direction == UP)
+      {
+        print_amplitude_color(0, NUM_LEDS, true, amplitude, r, g, b);
+      }
+      else if(direction == DOWN)
+      {
+        print_amplitude_color(0, NUM_LEDS, false, amplitude, r, g, b);
+      }
+      else if(direction == MIDDLE)
+      {
+        print_amplitude_color(NUM_LEDS / 2, NUM_LEDS, true, amplitude / 2, r, g, b);
+        print_amplitude_color(0, NUM_LEDS / 2, false , amplitude / 2, r, g, b);
+      }
     }
-    for(uint8_t i = amplitude; i < NUM_LEDS; i++)
+    else if(effect_type == STATIC)
     {
-      m_leds[i] = CRGB(0,0,0);
+      if(direction == UP)
+      {
+        print_amplitude_static(0, NUM_LEDS, true, amplitude, r, g, b);
+      }
+      else if(direction == DOWN)
+      {
+        print_amplitude_static(0, NUM_LEDS, false, amplitude, r, g, b);
+      }
+      else if(direction == MIDDLE)
+      {
+        print_amplitude_static(NUM_LEDS / 2, NUM_LEDS, true, amplitude / 2, r, g, b);
+        print_amplitude_static(0, NUM_LEDS / 2, false , amplitude / 2, r, g, b);
+      }
     }
-    FastLED.show();
   }
 }
 
