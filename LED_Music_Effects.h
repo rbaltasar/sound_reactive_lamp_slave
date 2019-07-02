@@ -44,8 +44,8 @@ public:
   void resync();
 
   
-  void bubble_effect(uint32_t print_delay, uint8_t r, uint8_t g, uint8_t b, uint8_t amplitude, DirectionType direction);
-  void power_bars_effect(uint32_t print_delay, uint8_t r, uint8_t g, uint8_t b, uint8_t amplitude,DirectionType direction, EffectType effect_type);
+  void bubble_effect(uint32_t print_delay, uint8_t r, uint8_t g, uint8_t b, uint8_t amplitude, uint8_t direction);
+  void power_bars_effect(uint32_t print_delay, uint8_t r, uint8_t g, uint8_t b, uint8_t amplitude,uint8_t direction, uint8_t effect_type);
 };
 
 #endif

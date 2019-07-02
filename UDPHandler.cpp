@@ -2,7 +2,8 @@
 
 UDPHandler::UDPHandler(lamp_status* lamp_status_request,timeSync* timer):
 CommunicationHandler(lamp_status_request,UDP,timer),
-received_mode_select(false)
+received_mode_select(false),
+received_msg(false)
 {
  
 }
@@ -19,7 +20,9 @@ UDP_Message_Id UDPHandler::get_msg_id(uint8_t msgID)
   else if(msgID == 2) return ACK;
   else if(msgID == 4) return PAYLOAD_SINGLE;
   else if(msgID == 5) return PAYLOAD_WINDOW;
-  else if(msgID == 5) return PAYLOAD_FULL;
+  else if(msgID == 6) return PAYLOAD_FULL;
+  else if(msgID == 7) return CONFIGURATION;
+  
   else return ERR;  
 }
 
@@ -28,145 +31,129 @@ void UDPHandler::begin()
   Serial.println("Starting UDP communication handler");
  
   /* Ignore the first msg after begin --> may be corrupted data in UDP buffer --> prevent switch to MQTT */
+  received_msg = false;
   received_mode_select = false;
 
   if(m_UDP.listenMulticast(IPAddress(239,1,2,3), 7001)) {
 
         m_UDP.onPacket([this](AsyncUDPPacket packet) {
 
-            m_message = packet.data();
+            noInterrupts();
 
-            Serial.println(m_message[0]);
+            //m_message = packet.data();
+            memcpy(m_message, packet.data(), packet.length());
+            received_msg = true;
 
-            return;
+            
+            interrupts();
 
-            switch(m_message[0])
-            {
-              case MODE_SELECT:
-              {
-                
-                udp_mode_select* msg_struct = (udp_mode_select*)m_message;
-
-                m_lamp_status_request_local.lamp_mode = msg_struct->mode_select;
-
-                received_mode_select = true;
-                
-                Serial.print("Received Mode Select: ");
-                Serial.println(msg_struct->mode_select);
-                  
-                break;
-              }
-              case SYNC_REQ:
-              {
-                udp_sync_req* msg_struct = (udp_sync_req*)m_message;
-
-                //synchronize(msg_struct.delay_ms);
-
-                m_lamp_status_request_local.resync = true;
-
-                Serial.print("Received Sync Request: ");
-                Serial.println(msg_struct->delay_ms);
-       
-                break;
-              }
-              case CONFIGURATION:
-              {
-                
-                udp_music_mode_configuration* msg_struct = (udp_music_mode_configuration*)m_message;
-
-                m_lamp_status_request_local.effect_delay = msg_struct->effect_delay;
-                m_lamp_status_request_local.effect_direction = (DirectionType)(msg_struct->effect_direction);
-
-                received_mode_select = true;
-                
-                Serial.print("Received configuration message: ");
-                Serial.println(msg_struct->effect_delay);
-                Serial.println(msg_struct->effect_direction);
-                  
-                break;
-              }
-              case PAYLOAD_SINGLE:
-              {
-                udp_payload_msg msg_struct = *(udp_payload_msg*)m_message;
-
-                /* Check if this message is targeted for this node */
-                if(!is_targeted_device(msg_struct.payload.mask,m_lamp_status_request->deviceID))
-                {
-                  m_lamp_status_request_local.color.R = 0;
-                  m_lamp_status_request_local.color.G = 0;
-                  m_lamp_status_request_local.color.B = 0;
-                  m_lamp_status_request_local.amplitude = 1;
-                }
-                else
-                {
-                  m_lamp_status_request_local.color.R = msg_struct.payload.color.R;
-                  m_lamp_status_request_local.color.G = msg_struct.payload.color.G;
-                  m_lamp_status_request_local.color.B = msg_struct.payload.color.B;
-                  m_lamp_status_request_local.amplitude = msg_struct.payload.amplitude;
-                }
- #if (DEBUG_UDP == 1)
-                Serial.print("Received Single Payload msg: [");
-                Serial.print(msg_struct.payload.color.R);
-                Serial.print("][");
-                Serial.print(msg_struct.payload.color.G);
-                Serial.print("][");
-                Serial.print(msg_struct.payload.color.B);
-                Serial.print("][");
-                Serial.print(msg_struct.payload.amplitude);
-                Serial.println("]");
-
-#endif             
-
-                break;
-              }
-              case PAYLOAD_WINDOW:
-              {
-
-                udp_payload_window_spectrum_msg* msg_struct = (udp_payload_window_spectrum_msg*)m_message;
-               
-               /* Get the size of the window */
-               uint8_t window_size = msg_struct->numMsg;
-               
-               /* Loop over all the received windows */
-               for(uint8_t i=0; i < window_size; i++)
-               {
-#if (DEBUG_UDP == 1)
-                  Serial.print("Window ");
-                  Serial.print(i);
-                  Serial.print(" with mask ");
-                  Serial.println(msg_struct->payload[i].mask);
-                  Serial.print("   Received Window Payload msg: [");
-                  Serial.print(msg_struct->payload[i].color.R);
-                  Serial.print("][");
-                  Serial.print(msg_struct->payload[i].color.G);
-                  Serial.print("][");
-                  Serial.print(msg_struct->payload[i].color.B);
-                  Serial.print("][");
-                  Serial.print(msg_struct->payload[i].amplitude);
-                  Serial.print("][");
-                  Serial.println("]");
-#endif                
-                  /* Break with the first window that fits to the node ID */
-               }
-                  
-                break;
-              }
-              case PAYLOAD_FULL:
-              {
-                udp_payload_full_spectrum_msg* msg_struct = (udp_payload_full_spectrum_msg*)m_message;
-
-                Serial.print("Received Full Payload msg: [");
-                Serial.println("]");
-               
-                  
-                break;
-              }
-              case ACK:
-              default:
-                break;                 
-            }
         });       
     }
+}
+
+void UDPHandler::process_message()
+{
+  switch(get_msg_id(m_message[0]))
+  {
+    case MODE_SELECT:
+    {
+      
+      udp_mode_select msg_struct = *((udp_mode_select*)m_message);
+
+      m_lamp_status_request_local.lamp_mode = msg_struct.mode_select;
+
+      received_mode_select = true;
+      
+      Serial.print("Received Mode Select: ");
+      Serial.println(msg_struct.mode_select);
+        
+      break;
+    }
+    case SYNC_REQ:
+    {
+      udp_sync_req msg_struct = *((udp_sync_req*)m_message);
+
+      //synchronize(msg_struct.delay_ms);
+
+      m_lamp_status_request_local.resync = true;
+
+      Serial.print("Received Sync Request: ");
+      Serial.println(msg_struct.delay_ms);
+ 
+        
+      break;
+    }
+    case CONFIGURATION:
+    {
+      
+      udp_music_mode_configuration msg_struct = *((udp_music_mode_configuration*)m_message);
+
+      m_lamp_status_request_local.effect_delay = msg_struct.effect_delay;
+      m_lamp_status_request_local.effect_direction = msg_struct.effect_direction;
+      
+      Serial.print("Received configuration message: ");
+      Serial.println(msg_struct.effect_delay);
+      Serial.println(msg_struct.effect_direction);
+        
+      break;
+    }
+    case PAYLOAD_SINGLE:
+    {
+      udp_payload_msg msg_struct = *((udp_payload_msg*)m_message);
+
+      /* Check if this message is targeted for this node */
+      if(!is_targeted_device(msg_struct.payload.mask,m_lamp_status_request->deviceID))
+      {
+        m_lamp_status_request_local.color.R = 0;
+        m_lamp_status_request_local.color.G = 0;
+        m_lamp_status_request_local.color.B = 0;
+        m_lamp_status_request_local.amplitude = 1;
+      }
+      else
+      {
+        m_lamp_status_request_local.color.R = msg_struct.payload.color.R;
+        m_lamp_status_request_local.color.G = msg_struct.payload.color.G;
+        m_lamp_status_request_local.color.B = msg_struct.payload.color.B;
+        m_lamp_status_request_local.amplitude = msg_struct.payload.amplitude;
+      }
+
+      Serial.print("Received Single Payload msg: [");
+      Serial.print(msg_struct.payload.color.R);
+      Serial.print("][");
+      Serial.print(msg_struct.payload.color.G);
+      Serial.print("][");
+      Serial.print(msg_struct.payload.color.B);
+      Serial.print("][");
+      Serial.print(msg_struct.payload.amplitude);
+      Serial.println("]");
+        
+      break;
+    }
+    case PAYLOAD_WINDOW:
+    {
+      udp_payload_window_spectrum_msg msg_struct = *((udp_payload_window_spectrum_msg*)m_message);
+
+      Serial.print("Received Window Payload msg: [");
+      Serial.println("]");
+        
+      break;
+    }
+    case PAYLOAD_FULL:
+    {
+      udp_payload_full_spectrum_msg msg_struct = *((udp_payload_full_spectrum_msg*)m_message);
+
+      Serial.print("Received Full Payload msg: [");
+      Serial.println("]");
+        
+      break;
+    }
+    case ACK:
+    default:
+      break;                 
+  }
+
+  received_msg = false;
+
 }
 
 void UDPHandler::stop()
@@ -188,13 +175,11 @@ void UDPHandler::synchronize(unsigned long delay_ms)
 void UDPHandler::network_loop()
 {
 
-  unsigned long now = millis(); 
-
-  /* Publish alive message */
-  if( (now - m_last_alive_udp) > 5000)
-  {   
-    Serial.println("I am alive!!");
-    m_last_alive_udp = now;
+  if(received_msg)
+  {
+    noInterrupts();
+    process_message();
+    interrupts();
   }
 
   /* Synchronous update of the shared memory */
@@ -203,6 +188,8 @@ void UDPHandler::network_loop()
   m_lamp_status_request->color.G = m_lamp_status_request_local.color.G;
   m_lamp_status_request->color.B = m_lamp_status_request_local.color.B;
   m_lamp_status_request->amplitude = m_lamp_status_request_local.amplitude;
+  m_lamp_status_request->effect_delay = m_lamp_status_request_local.effect_delay;
+  m_lamp_status_request->effect_direction = m_lamp_status_request_local.effect_direction;
   if(received_mode_select)
   {
     m_lamp_status_request->lamp_mode = m_lamp_status_request_local.lamp_mode;

@@ -38,21 +38,6 @@ enum MusicMode
   ENERGY_BAR_FAST = 6
 };
 
-/* Music effect direction */
-enum DirectionType
-{
-  UP = 0,
-  DOWN = 1,
-  MIDDLE = 2
-};
-
-/* Music effec type */
-enum EffectType
-{
-  COLOR = 0,
-  STATIC = 1
-};
-
 /* Static effects */
 enum StaticMode
 {
@@ -86,7 +71,7 @@ enum UDP_Message_Id
   PAYLOAD_SINGLE = 4,
   PAYLOAD_WINDOW = 5,
   PAYLOAD_FULL = 6,
-  CONFIGURATION = 7,
+  CONFIGURATION = 7
 };
 
 /* ------- STRUCTS ------- */
@@ -114,17 +99,17 @@ struct lamp_status
   uint8_t amplitude; //Effect amplitude
   uint8_t brightness; //Effect brightness
   uint8_t deviceID; //Lamp ID
+  uint8_t effect_direction = 0;
+  uint8_t effect_type = 0;
   RGBcolor color; //Lamp color
+  bool resync; //Resynchronization request pending
   uint32_t effect_delay; //Effect delay
   uint32_t effect_speed; //Effect speed
   uint32_t effect_amount; //Generic configuration parameter available for different effects. Meaning may vary.
-  DirectionType effect_direction;
-  EffectType effect_type;
   float light_amount; //Current light amount
   String IPAddress_string; //IP address
   String MACAddress_string; //MAC address
-  String ota_url; //URL for OTA sofware updates
-  bool resync; //Resynchronization request pending  
+  String ota_url; //URL for OTA sofware updates  
   system_state_var sysState; //System state
   init_struct initState; //Initialization state
 };

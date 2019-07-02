@@ -18,13 +18,14 @@ class UDPHandler : public CommunicationHandler
 private:
 
   AsyncUDP m_UDP; 
-  uint8_t* m_message;
+  uint8_t m_message[50];
   lamp_status m_lamp_status_request_local;
+  bool received_msg;
   bool received_mode_select;
-  unsigned long m_last_alive_udp;
   
   void synchronize(unsigned long delay_ms);
   UDP_Message_Id get_msg_id(uint8_t msgID);
+  void process_message();
 
 public: 
 

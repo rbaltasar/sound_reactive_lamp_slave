@@ -56,7 +56,7 @@ void LEDMusicEffects::shift_leds(uint8_t led_start, uint8_t led_end, uint8_t pos
     {
       m_leds[j] = m_leds[j+positions];
     }
-    for(uint8_t j = led_end - 1; j < led_end - positions; j--)
+    for(uint8_t j = led_end - 1; j <= led_end - positions; j--)
     {
       m_leds[j] = CRGB(R_in,G_in,B_in);
     }
@@ -66,23 +66,34 @@ void LEDMusicEffects::shift_leds(uint8_t led_start, uint8_t led_end, uint8_t pos
   delay(delay_ms);
 }
 
-void LEDMusicEffects::bubble_effect(uint32_t print_delay, uint8_t r, uint8_t g, uint8_t b, uint8_t amplitude, DirectionType direction)
+void LEDMusicEffects::bubble_effect(uint32_t print_delay, uint8_t r, uint8_t g, uint8_t b, uint8_t amplitude, uint8_t direction)
 {
   unsigned long now = m_timer->getTime();
 
   if( (now - m_last_iteration) > print_delay )
   {
+
+    Serial.println("Running bubble effect. ");
+    Serial.print("Color: ");
+    Serial.print(r);
+    Serial.print(" ");
+    Serial.print(g);
+    Serial.print(" ");
+    Serial.println(b);
+    Serial.print("Dir: ");
+    Serial.println(direction);
+
     m_last_iteration = now;
     
-    if(direction == UP)
+    if(direction == 0)
     {
       shift_leds(0, NUM_LEDS, amplitude, true, 0, r, g, b);
     }
-    else if(direction == DOWN)
+    else if(direction == 1)
     {
-      shift_leds(0, NUM_LEDS, amplitude, true, 0, r, g, b);
+      shift_leds(0, NUM_LEDS, amplitude, false, 0, r, g, b);
     }
-    if(direction == MIDDLE)
+    if(direction == 2)
     {
       shift_leds(NUM_LEDS / 2, NUM_LEDS, amplitude, true, 0, r, g, b);
       shift_leds(0, NUM_LEDS / 2 , amplitude, false, 0, r, g, b);
@@ -188,49 +199,61 @@ void LEDMusicEffects::print_amplitude_static(uint8_t led_start, uint8_t led_end,
 } 
   
 
-void LEDMusicEffects::power_bars_effect(uint32_t print_delay, uint8_t r, uint8_t g, uint8_t b, uint8_t amplitude, DirectionType direction, EffectType effect_type)
+void LEDMusicEffects::power_bars_effect(uint32_t print_delay, uint8_t r, uint8_t g, uint8_t b, uint8_t amplitude, uint8_t direction, uint8_t effect_type)
 {
   unsigned long now = m_timer->getTime();
 
   /* Time to update the LED status */
   if( (now - m_last_iteration) > print_delay )
   {
+    Serial.println("Running power bars effect. ");
+    Serial.print("Color: ");
+    Serial.print(r);
+    Serial.print(" ");
+    Serial.print(g);
+    Serial.print(" ");
+    Serial.println(b);
+    Serial.print("Dir: ");
+    Serial.print(direction);
+    Serial.print(" Effect ");
+    Serial.println(effect_type);
+    
     /* Reset timer */
     m_last_iteration = now;
     
     /* If there is no update since last iteration, perform a decay effect by reducing the requested amplitude one unit */
     if( !is_update(r,g,b,amplitude) )
     {
-      amplitude--;
+      if(amplitude != 0) amplitude--;     
     }      
 
-    if(effect_type == COLOR)
+    if(effect_type == 0)
     {
-      if(direction == UP)
+      if(direction == 0)
       {
         print_amplitude_color(0, NUM_LEDS, true, amplitude, r, g, b);
       }
-      else if(direction == DOWN)
+      else if(direction == 1)
       {
         print_amplitude_color(0, NUM_LEDS, false, amplitude, r, g, b);
       }
-      else if(direction == MIDDLE)
+      else if(direction == 2)
       {
         print_amplitude_color(NUM_LEDS / 2, NUM_LEDS, true, amplitude / 2, r, g, b);
         print_amplitude_color(0, NUM_LEDS / 2, false , amplitude / 2, r, g, b);
       }
     }
-    else if(effect_type == STATIC)
+    else if(effect_type == 1)
     {
-      if(direction == UP)
+      if(direction == 0)
       {
         print_amplitude_static(0, NUM_LEDS, true, amplitude, r, g, b);
       }
-      else if(direction == DOWN)
+      else if(direction == 1)
       {
         print_amplitude_static(0, NUM_LEDS, false, amplitude, r, g, b);
       }
-      else if(direction == MIDDLE)
+      else if(direction == 2)
       {
         print_amplitude_static(NUM_LEDS / 2, NUM_LEDS, true, amplitude / 2, r, g, b);
         print_amplitude_static(0, NUM_LEDS / 2, false , amplitude / 2, r, g, b);
