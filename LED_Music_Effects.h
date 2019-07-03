@@ -25,7 +25,7 @@ private:
   timeSync* m_timer;
   uint8_t music_effect_mem[4];
   CRGB m_static_color[NUM_LEDS];
-  
+    
   unsigned long m_last_iteration;
 
   void shift_leds(uint8_t led_start, uint8_t led_end, uint8_t positions, const bool top, const uint8_t delay_ms, const uint8_t R_in, const uint8_t G_in, const uint8_t B_in);
@@ -45,7 +45,7 @@ public:
 
   
   void bubble_effect(uint32_t print_delay, uint8_t r, uint8_t g, uint8_t b, uint8_t amplitude, uint8_t direction);
-  void power_bars_effect(uint32_t print_delay, uint8_t r, uint8_t g, uint8_t b, uint8_t amplitude,uint8_t direction, uint8_t effect_type);
+  void power_bars_effect(uint32_t print_delay, uint8_t r, uint8_t g, uint8_t b, uint8_t& amplitude,uint8_t direction, uint8_t effect_type);
 };
 
 #endif

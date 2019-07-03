@@ -22,6 +22,8 @@ private:
   lamp_status m_lamp_status_request_local;
   bool received_msg;
   bool received_mode_select;
+  bool m_received_config;
+  bool m_received_color_payload;
   
   void synchronize(unsigned long delay_ms);
   UDP_Message_Id get_msg_id(uint8_t msgID);

@@ -36,29 +36,37 @@ void LEDMusicEffects::shift_leds(uint8_t led_start, uint8_t led_end, uint8_t pos
   
   if(top)
   {
-    for(uint8_t j = led_end - 1; j >= positions ; j--)
+    for(uint8_t j = led_end - 1; j >= (led_start + positions) ; j--)
     {
       m_leds[j] = m_leds[j-positions];
+      //Serial.print("Position shift up: ");
       //Serial.println(j);
-      //delay(100);
+      //delay(50);
     }
-    for(uint8_t j = led_start; j < positions; j++)
+    for(uint8_t j = led_start; j < (led_start + positions); j++)
     {
       m_leds[j] = CRGB(R_in,G_in,B_in);
+      //Serial.print("Position fill up: ");
       //Serial.println(j);
-      //delay(100);
+      //delay(50);
     }
   }
 
-  else
+  else 
   {
     for(uint8_t j = led_start; j < (led_end - positions); j++)
     {
       m_leds[j] = m_leds[j+positions];
+      //Serial.print("Position shift down: ");
+      //Serial.println(j);
+      //delay(50);
     }
-    for(uint8_t j = led_end - 1; j <= led_end - positions; j--)
+    for(uint8_t j = led_end - positions; j < led_end; j++)
     {
       m_leds[j] = CRGB(R_in,G_in,B_in);
+      //Serial.print("Position fill down: ");
+      //Serial.println(j);
+      //delay(50);
     }
   }
 
@@ -95,21 +103,26 @@ void LEDMusicEffects::bubble_effect(uint32_t print_delay, uint8_t r, uint8_t g, 
     }
     if(direction == 2)
     {
-      shift_leds(NUM_LEDS / 2, NUM_LEDS, amplitude, true, 0, r, g, b);
       shift_leds(0, NUM_LEDS / 2 , amplitude, false, 0, r, g, b);
+      shift_leds(NUM_LEDS / 2, NUM_LEDS, amplitude, true, 0, r, g, b);
+      
     }
   }
 }
 
 void LEDMusicEffects::print_amplitude_color(uint8_t led_start, uint8_t led_end, const bool top, uint8_t amplitude, uint8_t r, uint8_t g, uint8_t b)
 {
+  if(amplitude > 6) amplitude /= 6;
+  else if(amplitude == 0) amplitude = 0;
+  else amplitude = 1;
+  
   if(top)
   {    
-    for(uint8_t i = led_start; i < amplitude; i++)
+    for(uint8_t i = led_start; i < led_start + amplitude; i++)
     {
       m_leds[i] = CRGB(r,g,b);
     }
-    for(uint8_t i = amplitude; i < led_end; i++)
+    for(uint8_t i = led_start + amplitude; i < led_end; i++)
     {
       m_leds[i] = CRGB(0,0,0);
     }
@@ -142,7 +155,7 @@ bool LEDMusicEffects::is_update(uint8_t r, uint8_t g, uint8_t b, uint8_t amplitu
   uint8_t r_old = music_effect_mem[0];
   uint8_t g_old = music_effect_mem[1];
   uint8_t b_old = music_effect_mem[2];
-  uint8_t ampl_old = music_effect_mem[3];
+  uint8_t ampl_req = music_effect_mem[3];
   
   if( (r_old != r) || (g_old != g) || (b_old != b) )
   {
@@ -153,7 +166,7 @@ bool LEDMusicEffects::is_update(uint8_t r, uint8_t g, uint8_t b, uint8_t amplitu
     
     retVal = true;
   } 
-  else if( (amplitude != 0xFF) && (ampl_old != amplitude) )
+  else if( (amplitude != 0xFF) && (ampl_req != amplitude) )
   {
     music_effect_mem[3] = amplitude;
     
@@ -199,7 +212,7 @@ void LEDMusicEffects::print_amplitude_static(uint8_t led_start, uint8_t led_end,
 } 
   
 
-void LEDMusicEffects::power_bars_effect(uint32_t print_delay, uint8_t r, uint8_t g, uint8_t b, uint8_t amplitude, uint8_t direction, uint8_t effect_type)
+void LEDMusicEffects::power_bars_effect(uint32_t print_delay, uint8_t r, uint8_t g, uint8_t b, uint8_t& amplitude, uint8_t direction, uint8_t effect_type)
 {
   unsigned long now = m_timer->getTime();
 
@@ -213,6 +226,8 @@ void LEDMusicEffects::power_bars_effect(uint32_t print_delay, uint8_t r, uint8_t
     Serial.print(g);
     Serial.print(" ");
     Serial.println(b);
+    Serial.print("Requested amplitude: ");
+    Serial.println(amplitude);
     Serial.print("Dir: ");
     Serial.print(direction);
     Serial.print(" Effect ");
@@ -224,8 +239,10 @@ void LEDMusicEffects::power_bars_effect(uint32_t print_delay, uint8_t r, uint8_t
     /* If there is no update since last iteration, perform a decay effect by reducing the requested amplitude one unit */
     if( !is_update(r,g,b,amplitude) )
     {
+
+      Serial.println("Similar data. Decrementing amplitude!");
       if(amplitude != 0) amplitude--;     
-    }      
+    }
 
     if(effect_type == 0)
     {

@@ -3,7 +3,9 @@
 UDPHandler::UDPHandler(lamp_status* lamp_status_request,timeSync* timer):
 CommunicationHandler(lamp_status_request,UDP,timer),
 received_mode_select(false),
-received_msg(false)
+received_msg(false),
+m_received_config(false),
+m_received_color_payload(false)
 {
  
 }
@@ -33,6 +35,11 @@ void UDPHandler::begin()
   /* Ignore the first msg after begin --> may be corrupted data in UDP buffer --> prevent switch to MQTT */
   received_msg = false;
   received_mode_select = false;
+  m_received_color_payload = false;
+  m_received_config = false;
+
+  /* Default effect delay */
+  m_lamp_status_request->effect_delay = 30;
 
   if(m_UDP.listenMulticast(IPAddress(239,1,2,3), 7001)) {
 
@@ -90,6 +97,8 @@ void UDPHandler::process_message()
 
       m_lamp_status_request_local.effect_delay = msg_struct.effect_delay;
       m_lamp_status_request_local.effect_direction = msg_struct.effect_direction;
+
+      m_received_config = true;
       
       Serial.print("Received configuration message: ");
       Serial.println(msg_struct.effect_delay);
@@ -126,6 +135,8 @@ void UDPHandler::process_message()
       Serial.print("][");
       Serial.print(msg_struct.payload.amplitude);
       Serial.println("]");
+
+      m_received_color_payload = true;
         
       break;
     }
@@ -184,12 +195,16 @@ void UDPHandler::network_loop()
 
   /* Synchronous update of the shared memory */
   //Serial.println("Network loop UDP!");
-  m_lamp_status_request->color.R = m_lamp_status_request_local.color.R;
-  m_lamp_status_request->color.G = m_lamp_status_request_local.color.G;
-  m_lamp_status_request->color.B = m_lamp_status_request_local.color.B;
-  m_lamp_status_request->amplitude = m_lamp_status_request_local.amplitude;
-  m_lamp_status_request->effect_delay = m_lamp_status_request_local.effect_delay;
-  m_lamp_status_request->effect_direction = m_lamp_status_request_local.effect_direction;
+  if(m_received_color_payload)
+  {
+    m_lamp_status_request->color.R = m_lamp_status_request_local.color.R;
+    m_lamp_status_request->color.G = m_lamp_status_request_local.color.G;
+    m_lamp_status_request->color.B = m_lamp_status_request_local.color.B;
+    m_lamp_status_request->amplitude = m_lamp_status_request_local.amplitude;
+
+    m_received_color_payload = false;
+  }
+ 
   if(received_mode_select)
   {
     m_lamp_status_request->lamp_mode = m_lamp_status_request_local.lamp_mode;
@@ -201,6 +216,12 @@ void UDPHandler::network_loop()
   {
     m_lamp_status_request->resync = true;
     m_lamp_status_request_local.resync = false;
+  }
+  if(m_received_config)
+  {
+    m_lamp_status_request->effect_delay = m_lamp_status_request_local.effect_delay;
+    m_lamp_status_request->effect_direction = m_lamp_status_request_local.effect_direction;
+    m_received_config = false;
   }
 
 }
