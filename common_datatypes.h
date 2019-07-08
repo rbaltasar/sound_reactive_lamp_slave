@@ -31,11 +31,7 @@ enum MusicMode
 {
   BUBBLE = 0,
   ENERGY_BAR = 1,
-  ENERGY_BAR_COLOR = 2,
-  SPECTRUM_BAR = 3,
-  SPECTRUM_BAR_COLOR = 4,
-  FULL_SPECTRUM_COLOR = 5,
-  ENERGY_BAR_FAST = 6
+  ENERGY_BAR_COLOR = 2
 };
 
 /* Static effects */
@@ -101,6 +97,7 @@ struct lamp_status
   uint8_t deviceID; //Lamp ID
   uint8_t effect_direction = 0;
   uint8_t effect_type = 0;
+  uint8_t color_increment = 0;
   RGBcolor color; //Lamp color
   bool resync; //Resynchronization request pending
   uint32_t effect_delay; //Effect delay
@@ -160,6 +157,8 @@ struct udp_music_mode_configuration
   uint8_t msgID;
   uint8_t effect_delay;
   uint8_t effect_direction;
+  RGBcolor base_color;
+  uint8_t color_increment;
 };
 
 /* UDP synchronization request */

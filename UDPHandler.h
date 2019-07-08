@@ -28,6 +28,7 @@ private:
   void synchronize(unsigned long delay_ms);
   UDP_Message_Id get_msg_id(uint8_t msgID);
   void process_message();
+  uint8_t compute_amplitude(uint8_t relative_amplitude);
 
 public: 
 

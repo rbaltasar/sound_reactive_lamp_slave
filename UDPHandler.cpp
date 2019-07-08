@@ -46,16 +46,24 @@ void UDPHandler::begin()
         m_UDP.onPacket([this](AsyncUDPPacket packet) {
 
             noInterrupts();
-
-            //m_message = packet.data();
             memcpy(m_message, packet.data(), packet.length());
-            received_msg = true;
-
-            
+            received_msg = true;          
             interrupts();
 
         });       
     }
+}
+
+/* Convert a relative amplitude in an interval [0-100] to an absolute amplitude
+ * proportional to the number of leds
+ */
+uint8_t UDPHandler::compute_amplitude(uint8_t relative_amplitude)
+{
+  float amplitude = (float)relative_amplitude / 100.0;
+
+  amplitude *= NUM_LEDS;
+
+  return (uint8_t)amplitude;
 }
 
 void UDPHandler::process_message()
@@ -80,8 +88,6 @@ void UDPHandler::process_message()
     {
       udp_sync_req msg_struct = *((udp_sync_req*)m_message);
 
-      //synchronize(msg_struct.delay_ms);
-
       m_lamp_status_request_local.resync = true;
 
       Serial.print("Received Sync Request: ");
@@ -97,12 +103,20 @@ void UDPHandler::process_message()
 
       m_lamp_status_request_local.effect_delay = msg_struct.effect_delay;
       m_lamp_status_request_local.effect_direction = msg_struct.effect_direction;
-
+      m_lamp_status_request_local.color.R = msg_struct.base_color.R;
+      m_lamp_status_request_local.color.G = msg_struct.base_color.G;
+      m_lamp_status_request_local.color.B = msg_struct.base_color.B;
+      m_lamp_status_request_local.color_increment = msg_struct.color_increment;
+      
       m_received_config = true;
       
       Serial.print("Received configuration message: ");
       Serial.println(msg_struct.effect_delay);
       Serial.println(msg_struct.effect_direction);
+      Serial.println(msg_struct.base_color.R);
+      Serial.println(msg_struct.base_color.G);
+      Serial.println(msg_struct.base_color.B);
+      Serial.println(msg_struct.color_increment);
         
       break;
     }
@@ -113,19 +127,28 @@ void UDPHandler::process_message()
       /* Check if this message is targeted for this node */
       if(!is_targeted_device(msg_struct.payload.mask,m_lamp_status_request->deviceID))
       {
+        /* With single payload, a message addressed to this node is discarded
+         * The effect must be zero
+         */
         m_lamp_status_request_local.color.R = 0;
         m_lamp_status_request_local.color.G = 0;
         m_lamp_status_request_local.color.B = 0;
-        m_lamp_status_request_local.amplitude = 1;
+        m_lamp_status_request_local.amplitude = 0;
       }
       else
       {
-        m_lamp_status_request_local.color.R = msg_struct.payload.color.R;
-        m_lamp_status_request_local.color.G = msg_struct.payload.color.G;
-        m_lamp_status_request_local.color.B = msg_struct.payload.color.B;
-        m_lamp_status_request_local.amplitude = msg_struct.payload.amplitude;
+        /* Do not update the color if the selected effect is ENERGY BAR */
+        if(m_lamp_status_request->lamp_mode != (100 + ENERGY_BAR_COLOR))
+        {
+          m_lamp_status_request_local.color.R = msg_struct.payload.color.R;
+          m_lamp_status_request_local.color.G = msg_struct.payload.color.G;
+          m_lamp_status_request_local.color.B = msg_struct.payload.color.B;
+        }
+        
+        m_lamp_status_request_local.amplitude = compute_amplitude(msg_struct.payload.amplitude);
       }
 
+#if 0
       Serial.print("Received Single Payload msg: [");
       Serial.print(msg_struct.payload.color.R);
       Serial.print("][");
@@ -135,6 +158,7 @@ void UDPHandler::process_message()
       Serial.print("][");
       Serial.print(msg_struct.payload.amplitude);
       Serial.println("]");
+#endif
 
       m_received_color_payload = true;
         
@@ -221,6 +245,7 @@ void UDPHandler::network_loop()
   {
     m_lamp_status_request->effect_delay = m_lamp_status_request_local.effect_delay;
     m_lamp_status_request->effect_direction = m_lamp_status_request_local.effect_direction;
+    m_lamp_status_request->color_increment = m_lamp_status_request_local.color_increment;
     m_received_config = false;
   }
 
