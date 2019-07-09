@@ -13,6 +13,7 @@
 #include "LED_controller.h"
 #include "timeSync.h"
 
+/* Forward delcaratio of LEDController class */
 class LEDController;
 
 class LEDMusicEffects
@@ -20,20 +21,22 @@ class LEDMusicEffects
 
 private:
 
-  LEDController* m_led_controller;
-  CRGB* m_leds;
+  /* Member variables */
+  LEDController* m_led_controller; //Access to the LED controller functionality
+  CRGB* m_leds; //Access to the LED shared memory
   timeSync* m_timer;
-  uint8_t music_effect_mem[4];
-  CRGB m_static_color[NUM_LEDS];
-
+  uint8_t music_effect_mem[4]; //Local memory placeholder to store state information between function calls
+  CRGB m_static_color[NUM_LEDS]; //Local LED memory to store static effects
+  unsigned long m_last_iteration; //Keep track of the last iteration of a function
+  
+  /* Structure to describe a color in HSV format */
   typedef struct {
     double h;       // angle in degrees
     double s;       // a fraction between 0 and 1
     double v;       // a fraction between 0 and 1
   } hsv;
     
-  unsigned long m_last_iteration;
-
+  /* Member private functions */
   void shift_leds(uint8_t led_start, uint8_t led_end, uint8_t positions, const bool top, const uint8_t delay_ms, const uint8_t R_in, const uint8_t G_in, const uint8_t B_in);
   void print_amplitude_color(uint8_t led_start, uint8_t led_end, const bool top, uint8_t amplitude, uint8_t r, uint8_t g, uint8_t b);
   void print_amplitude_static(uint8_t led_start, uint8_t led_end, const bool top, uint8_t amplitude, uint8_t r_base, uint8_t g_base, uint8_t b_base, uint8_t increment);
@@ -42,17 +45,17 @@ private:
   uint8_t compute_bubble_amplitude(uint8_t amplitude);
   RGBcolor hsv2rgb(hsv in);
   hsv rgb2hsv(RGBcolor in_rgb);
-
   
 public:
 
   LEDMusicEffects(LEDController* led_controller, CRGB* leds_ptr, timeSync* timer);
   ~LEDMusicEffects();
 
+  /* General purpose functions */
   void end_effect();
   void resync();
 
-  
+  /* Music effects */
   void bubble_effect(uint32_t print_delay, uint8_t r, uint8_t g, uint8_t b, uint8_t amplitude, uint8_t direction);
   void power_bars_effect(uint32_t print_delay, uint8_t r, uint8_t g, uint8_t b, uint8_t& amplitude,uint8_t direction, uint8_t effect_type, uint8_t increment);
 };
