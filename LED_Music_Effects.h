@@ -56,8 +56,8 @@ public:
   void resync();
 
   /* Music effects */
-  void bubble_effect(uint32_t print_delay, uint8_t r, uint8_t g, uint8_t b, uint8_t amplitude, uint8_t direction);
-  void power_bars_effect(uint32_t print_delay, uint8_t r, uint8_t g, uint8_t b, uint8_t& amplitude,uint8_t direction, uint8_t effect_type, uint8_t increment);
+  void bubble_effect(uint8_t refresh_rate, uint8_t r, uint8_t g, uint8_t b, uint8_t amplitude, uint8_t direction);
+  void power_bars_effect(uint8_t refresh_rate, uint8_t r, uint8_t g, uint8_t b, uint8_t& amplitude,uint8_t direction, uint8_t effect_type, uint8_t increment);
 };
 
 #endif
