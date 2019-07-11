@@ -62,7 +62,7 @@ public:
   void end_effect();
   void resync();
 
-  void fade_to_color(byte red, byte green, byte blue, uint8_t delay_ms);
+  void fade_to_color(RGBcolor target_color, uint8_t delay_ms);
 
   void RGBLoop();
   void FadeInOut(byte red, byte green, byte blue);
