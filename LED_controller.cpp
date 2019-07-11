@@ -1,25 +1,24 @@
 
 #include "LED_controller.h"
 
-
 LEDController::LEDController(lamp_status* lamp_status_request, timeSync* timer):
 m_lamp_status_request(lamp_status_request),
 m_timer(timer)
 {
+  /* Create static effects object */
   m_static_effects = new LEDStaticEffects(this, m_leds, m_timer);
+  /* Create music effects object */
   m_music_effects = new LEDMusicEffects(this, m_leds, m_timer);
 }
 
 LEDController::~LEDController()
 {
+  /* Deallocate memory */
   delete m_static_effects;
+  delete m_music_effects;
 }
 
-void LEDController::setRGB(RGBcolor color)
-{
-  setAllLeds(color,0);
-}
-
+/* Do timer resynchronization for static and music effects */
 void LEDController::resync()
 {
   m_static_effects->resync();
@@ -27,39 +26,37 @@ void LEDController::resync()
   
 }
 
-void LEDController::setRGB(uint8_t R, uint8_t G, uint8_t B)
-{
-  RGBcolor color_req;
-  color_req.R = R;
-  color_req.G = G;
-  color_req.B = B;
-  
-  setAllLeds(color_req,0);
-}
-
+/* Hardware setup */
 void LEDController::setup()
 {
+  /* Configure LED stripe */
   FastLED.addLeds<WS2812, LED_PIN, GRB>(m_leds, NUM_LEDS);
   
-  setRGB(0,0,0);
+  /* Reset color */
+  setAllLeds( (RGBcolor){0,0,0}, 0 );
 }
 
+/* Set all leds with the same color */
 void LEDController::setAllLeds(RGBcolor color, unsigned long delay_ms)
 {
   setLeds(color,delay_ms,NUM_LEDS);
 }
 
+/* Set a defined number of LEDs with the same color, with or without erasing the non-set leds */
 void LEDController::setLeds(RGBcolor color, unsigned long delay_ms, uint8_t num_leds, bool erase_others)
 {
+  /* Clip value */
   color.R > 255 ? color.R = 255 : color.R = color.R;
   color.G > 255 ? color.G = 255 : color.G = color.G;
   color.B > 255 ? color.B = 255 : color.B = color.B;
+  /* Set requested leds */
   for(uint8_t i = 0; i < num_leds; i++ )
   {
     m_leds[i] = CRGB(color.R, color.G, color.B);
     FastLED.show();
     delay(delay_ms); 
   }
+  /* Eras non-requested led */
   if(erase_others)
   {
     for(uint8_t i = num_leds; i < NUM_LEDS; i++ )
@@ -70,28 +67,16 @@ void LEDController::setLeds(RGBcolor color, unsigned long delay_ms, uint8_t num_
   }
 }
 
+/* Update the color for all leds */
 void LEDController::update_color()
 {
   setAllLeds(m_lamp_status_request->color,0);
-}
-  
-void LEDController::update_brightness()
-{
-  if(m_mode == 1)
-  {
-    
-  }
-}
+} 
 
+/* Update the LED stripe for static and dynamic effects */
 void LEDController::feed()
 {
-  /* Music effects */
-  if(m_mode > 1 && m_mode < 10)
-  {
-
-  }
-
-  /* Static effects */
+  /* Static effects - Range [10,99] */
   else if(m_mode >= 10 && m_mode < 99)
   {
     switch(m_mode - 10)
@@ -166,7 +151,7 @@ void LEDController::feed()
         break;      
     }
   }
-  /* Dynamic effects */
+  /* Music effects - Range >= 100 */
   else if(m_mode >= 100)
   {
      switch(m_mode - 100)
@@ -184,69 +169,73 @@ void LEDController::feed()
   }
 }
   
+/* Update the LED mode */
 void LEDController::update_mode()
 {
+  /* Set local mode */
   m_mode = m_lamp_status_request->lamp_mode;
 
+  /* Handle special cases (no effect) - Range[0,9] */
   switch(m_mode)
   {
-    case 0:
-      setRGB(0,0,0);
+    case 0: //Switch Off
+      setAllLeds( (RGBcolor){0,0,0}, 0 );
       break;
-    case 1:
-      setRGB(m_lamp_status_request->color.R / m_lamp_status_request->brightness, m_lamp_status_request->color.G / m_lamp_status_request->brightness, m_lamp_status_request->color.B / m_lamp_status_request->brightness);
+    case 1: //Switch On (with brightness
+      setAllLeds( (RGBcolor){m_lamp_status_request->color.R / m_lamp_status_request->brightness,m_lamp_status_request->color.G / m_lamp_status_request->brightness,m_lamp_status_request->color.B / m_lamp_status_request->brightness}, 0 );
       break;
-    case 4:
+    case 4: //Ambient light effect
       ambient_light_effect();
-      break;
-    
+      break;    
   }
 }
 
+/* Cleanup and finish current effect */
 void LEDController::end_effect()
 {
   m_static_effects->end_effect();
+  m_music_effects->end_effect();
 }
 
+/* Ambient light effect
+*  The intensity of the light depends on the ambient light, provided by an external node
+*/
 void LEDController::ambient_light_effect()
-{
-  const float threshold = 30.0;
-  const uint8_t delay_ms = 150;
-  uint8_t r,g,b;
-  if(m_lamp_status_request->light_amount > threshold)
+{ 
+  RGBcolor targetColor;
+  /* Too much light. Shut down the lamp */
+  if(m_lamp_status_request->light_amount > AMBIENT_LIGHT_THRESHOLD)
   {
-    //setRGB(0, 0, 0);
-    r = 0;
-    g = 0;
-    b = 0;
+    targetColor.R = 0;
+    targetColor.G = 0;
+    targetColor.B = 0;
   }
+  /* Brightness depends on the light amount */
   else
   {
     float multiplier;
 
-    if(m_lamp_status_request->light_amount > (threshold / 2))
+    if(m_lamp_status_request->light_amount > (AMBIENT_LIGHT_THRESHOLD / 2))
     {
-      multiplier = (threshold - m_lamp_status_request->light_amount) / (4*threshold);
+      multiplier = (AMBIENT_LIGHT_THRESHOLD - m_lamp_status_request->light_amount) / (4*AMBIENT_LIGHT_THRESHOLD);
     }
     else if (m_lamp_status_request->light_amount > 0)
     {
-      multiplier = (threshold - m_lamp_status_request->light_amount) / (2*threshold);
+      multiplier = (AMBIENT_LIGHT_THRESHOLD - m_lamp_status_request->light_amount) / (2*AMBIENT_LIGHT_THRESHOLD);
     }
     else
     {
       multiplier = 1;
     }
 
-    r = R_DEFAULT * multiplier;
-    g = G_DEFAULT * multiplier;
-    b = B_DEFAULT * multiplier;
+    targetColor.R = R_DEFAULT * multiplier;
+    targetColor.G = G_DEFAULT * multiplier;
+    targetColor.B = B_DEFAULT * multiplier;
   }
 
-  m_static_effects->fade_to_color(r, g, b,delay_ms);
- 
+  /* Change smoothly to the target color */
+  m_static_effects->fade_to_color(targetColor,AMBIENT_LIGHT_DELAY); 
 }
-
-
 
 /*********************************************************************************************************
   END FILE
