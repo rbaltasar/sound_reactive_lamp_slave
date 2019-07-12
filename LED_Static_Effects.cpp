@@ -1067,12 +1067,16 @@ void LEDStaticEffects::setAll(byte red, byte green, byte blue)
 }
 
 /* This function works on the assumption that all the leds have the same color */
-void LEDStaticEffects::fade_to_color(byte red, byte green, byte blue, uint8_t delay_ms)
+void LEDStaticEffects::fade_to_color(RGBcolor target_color, uint8_t delay_ms)
 {
   bool exit_condition = false;
-  uint8_t exit_counter;
+  uint8_t exit_counter, red, green, blue;
   uint8_t red_increment, green_increment, blue_increment;
   uint16_t red_current, green_current, blue_current;
+  
+  red = target_color.R;
+  green = target_color.G;
+  blue = target_color.B;
 
   /* Compute directions */
   bool dir_r = red > leds[0].r ? true : false;

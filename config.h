@@ -31,6 +31,9 @@ const char masterIP[] = "192.168.2.120";
 #define INIT_COMM_TIMEOUT 5000
 #define ALIVE_PERIOD 30000
 
+#define AMBIENT_LIGHT_THRESHOLD 30.0
+#define AMBIENT_LIGHT_DELAY 150
+
 //----------- Configuration -------------
 //LED configuration
 #define VAL_MAX_DB 20
