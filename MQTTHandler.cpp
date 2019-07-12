@@ -9,24 +9,29 @@ m_mqtt_reconnect_counter(0),
 m_last_alive_tx(0),
 m_last_alive_rx(0)
 {
+  
+}
+
+/* Start communication */
+void MQTTHandler::configure() 
+{
   /* Set client */
   m_client.setClient(espClient);
   /* Define MQTT broker */
   m_client.setServer(mqtt_server, 1883);
   /* Define callback function */
   m_client.setCallback(std::bind(&MQTTHandler::callback, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+
 }
 
 /* Start communication */
 void MQTTHandler::begin() 
 {
-  /* Subscribe to topics */
-  Serial.println("Subscribing to topics");
-  subscribe_topics();
+  /* Reconnect the client */
+  reconnect();
 
   /* Restet alive timer to avoid reboot due to communication error */
   m_last_alive_rx = millis();
- 
 }
 
 /* Stop communication. TODO: unsubscribe? */
@@ -169,6 +174,7 @@ void MQTTHandler::network_loop()
   /* MQTT loop */
   if (!m_client.connected()) reconnect();
   m_client.loop();
+  delay(10);
 
   unsigned long now = millis(); 
 
@@ -190,9 +196,20 @@ void MQTTHandler::network_loop()
 /* Subscribe to all the topics from the topic list */
 void MQTTHandler::subscribe_topics()
 {
-  for(uint8_t i = 0; i < NUM_SUBSCRIBED_TOPICS; i++)
+  /* Subscribe to topics */
+  Serial.println("Subscribing to topics");
+  
+  if(!m_lamp_status_request->initState.isCompleted)
   {
-    m_client.subscribe(topic_subscribe_list[i].c_str());
+    m_client.subscribe("lamp_network/initcommrx");
+  }
+
+  else
+  {
+    for(uint8_t i = 0; i < NUM_SUBSCRIBED_TOPICS; i++)
+    {
+      m_client.subscribe(topic_subscribe_list[i].c_str());
+    }
   }
 }
 
@@ -200,6 +217,13 @@ void MQTTHandler::subscribe_topics()
 /* Reconnect to the MQTT broker */
 void MQTTHandler::reconnect()
 {
+
+  Serial.print("checking wifi...");
+  while (WiFi.status() != WL_CONNECTED) {
+    Serial.print(".");
+    delay(1000);
+  }
+  
   // Loop until we're reconnected
   if (!m_client.connected())
   {
@@ -232,9 +256,7 @@ void MQTTHandler::publish_initcomm()
 
   Serial.println("Starting communication handshake");
   
-  m_client.subscribe("lamp_network/initcommrx");
-
-  m_last_alive_rx = millis();
+  //m_client.subscribe("lamp_network/initcommrx");
   
   StaticJsonBuffer<256> jsonBuffer_send;
   JsonObject& root_send = jsonBuffer_send.createObject();
@@ -253,6 +275,9 @@ void MQTTHandler::publish_initcomm()
 /* Finish communication handshake */
 void MQTTHandler::finish_initcomm()
 {
+  /* Sbuscribe to topics */
+  subscribe_topics();
+  
   /* Unsubscribe to communication handshake topic */
   m_client.unsubscribe("lamp_network/initcommrx");
 

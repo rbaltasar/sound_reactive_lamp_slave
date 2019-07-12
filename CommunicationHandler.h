@@ -32,6 +32,7 @@ class CommunicationHandler
 
     virtual void begin() = 0;
     virtual void stop() = 0;
+    virtual void configure() = 0;
     virtual void network_loop() = 0;   
     virtual void publish_initcomm() {};
     virtual void finish_initcomm() {};

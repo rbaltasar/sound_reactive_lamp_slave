@@ -45,7 +45,6 @@ private:
   };
 
   void subscribe_topics();
-  void reconnect();
   void callback(char* topic, byte* payload, unsigned int length);
 
 public: 
@@ -54,6 +53,8 @@ public:
 
   void begin();
   void stop();
+  void configure();
+  void reconnect();
   void network_loop();
   void publish_initcomm();
   void finish_initcomm();

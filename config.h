@@ -28,7 +28,7 @@
 
 const char masterIP[] = "192.168.2.120";
 
-#define INIT_COMM_TIMEOUT 2000
+#define INIT_COMM_TIMEOUT 5000
 #define ALIVE_PERIOD 30000
 
 //----------- Configuration -------------

@@ -37,6 +37,7 @@ public:
 
   void begin();
   void stop();
+  void configure(){};
   void network_loop();
 
  

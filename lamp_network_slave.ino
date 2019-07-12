@@ -29,6 +29,7 @@ MQTTHandler mqtt_handler(&lamp_state.val,&timer);
 /* UDP communication handler */
 UDPHandler udp_handler(&lamp_state.val,&timer);
 
+unsigned long m_last_iteration_reconnect = 0;
 
 /* Reseat reason. Only for debugging reasons. Remove long term */
 RESET_REASON reset_reason_0;
@@ -38,15 +39,20 @@ void setup()
 {
   
   Serial.begin(115200);
-  delay(10);
-
-  /* Get reset reason */
-  get_reset_reason();
 
   /* Setup the WiFi connection */
   setup_wifi();
+  delay(10);
+
   /* Start with MQTT communication. Create object */  
   communication_handler = &mqtt_handler;
+  communication_handler->configure();
+
+  communication_handler->begin();
+
+  /* Get reset reason */
+  //get_reset_reason();
+
   /* Setup the hardware */
   setup_hardware(); 
 
@@ -132,7 +138,7 @@ void setup_wifi()
   Serial.print(ssid);
   Serial.println(" ...");
 
-  WiFi.mode(WIFI_STA);
+  //WiFi.mode(WIFI_STA);
   
   int i = 0;
   while (WiFi.status() != WL_CONNECTED)
@@ -141,6 +147,7 @@ void setup_wifi()
     Serial.print(++i);
     Serial.print(' ');
   }
+
   Serial.println('\n');
   Serial.println("Connection established!");
   Serial.print("IP address:\t");
@@ -153,6 +160,7 @@ void setup_wifi()
 
   /* Translate the IP address to String to have a unique name for MQTT client */
   lamp_state.val.IPAddress_string = IpAddress2String(WiFi.localIP());  
+
 }
 
 /* Setup the LED controller */
@@ -328,6 +336,17 @@ void initComm()
 
       /* Restart microcontroller */
       ESP.restart();
+    }
+
+    /* Timeout. Show error and reset */
+    else if( (millis() - m_last_iteration_reconnect ) > 500 )
+    {
+      /* Initiate handshake. TODO: check that MQTT communication is being used */
+      communication_handler->begin();
+      delay(10);
+      communication_handler->publish_initcomm();
+
+      m_last_iteration_reconnect = millis();
     }
   }
 }
