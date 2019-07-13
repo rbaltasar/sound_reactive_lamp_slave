@@ -13,6 +13,9 @@
 #include "LED_controller.h"
 #include "timeSync.h"
 
+#define MUSIC_EFFECTS_MEMSIZE 4
+#define MAX_PAYLOAD_LOSS 10
+
 /* Forward delcaratio of LEDController class */
 class LEDController;
 
@@ -25,9 +28,11 @@ private:
   LEDController* m_led_controller; //Access to the LED controller functionality
   CRGB* m_leds; //Access to the LED shared memory
   timeSync* m_timer;
-  uint8_t music_effect_mem[4]; //Local memory placeholder to store state information between function calls
+  uint8_t music_effect_mem[MUSIC_EFFECTS_MEMSIZE]; //Local memory placeholder to store state information between function calls
   CRGB m_static_color[NUM_LEDS]; //Local LED memory to store static effects
   unsigned long m_last_iteration; //Keep track of the last iteration of a function
+  uint8_t m_no_payload_counter;
+  float m_smooth_amplitude;
   
   /* Structure to describe a color in HSV format */
   typedef struct {
@@ -56,7 +61,7 @@ public:
   void resync();
 
   /* Music effects */
-  void bubble_effect(uint32_t refresh_rate, uint8_t r, uint8_t g, uint8_t b, uint8_t amplitude, uint8_t direction);
+  void bubble_effect(uint32_t refresh_rate, uint8_t r, uint8_t g, uint8_t b, uint8_t amplitude, uint8_t direction, bool& isNewPayload);
   void power_bars_effect(uint32_t refresh_rate, uint8_t r, uint8_t g, uint8_t b, uint8_t& amplitude,uint8_t direction, uint8_t effect_type, uint8_t increment);
 };
 

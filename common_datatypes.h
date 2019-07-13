@@ -100,6 +100,7 @@ struct lamp_status
   uint8_t color_increment = 0;
   RGBcolor color; //Lamp color
   bool resync; //Resynchronization request pending
+  bool new_payload; //New message received
   uint32_t effect_delay; //Effect delay
   uint32_t effect_speed; //Effect speed
   uint32_t effect_amount; //Generic configuration parameter available for different effects. Meaning may vary.

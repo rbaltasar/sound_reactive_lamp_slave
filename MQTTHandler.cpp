@@ -32,6 +32,9 @@ void MQTTHandler::begin()
 
   /* Restet alive timer to avoid reboot due to communication error */
   m_last_alive_rx = millis();
+
+  /* Force a alive tx timeout to send inmediately an alive message */
+  m_last_alive_tx = 0;
 }
 
 /* Stop communication. TODO: unsubscribe? */

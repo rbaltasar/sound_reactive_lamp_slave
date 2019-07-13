@@ -157,7 +157,7 @@ void LEDController::feed()
      switch(m_mode - 100)
     {
       case BUBBLE:
-        m_music_effects->bubble_effect(m_lamp_status_request->effect_delay, m_lamp_status_request->color.R, m_lamp_status_request->color.G, m_lamp_status_request->color.B, m_lamp_status_request->amplitude, m_lamp_status_request->effect_direction);
+        m_music_effects->bubble_effect(m_lamp_status_request->effect_delay, m_lamp_status_request->color.R, m_lamp_status_request->color.G, m_lamp_status_request->color.B, m_lamp_status_request->amplitude, m_lamp_status_request->effect_direction,m_lamp_status_request->new_payload);
         break;
       case ENERGY_BAR:
         m_music_effects->power_bars_effect(m_lamp_status_request->effect_delay, m_lamp_status_request->color.R, m_lamp_status_request->color.G, m_lamp_status_request->color.B, m_lamp_status_request->amplitude, m_lamp_status_request->effect_direction, 0, 0);

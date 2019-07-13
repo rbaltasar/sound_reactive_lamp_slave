@@ -6,7 +6,9 @@ LEDMusicEffects::LEDMusicEffects(LEDController* led_controller, CRGB* leds_ptr, 
 m_led_controller(led_controller),
 m_leds(leds_ptr),
 m_timer(timer),
-m_last_iteration(0)
+m_last_iteration(0),
+m_no_payload_counter(0),
+m_smooth_amplitude(0)
 {  
 }
 
@@ -204,16 +206,22 @@ void LEDMusicEffects::shift_leds(
 }
 
 /* Translate from a relative amplitude [0-100] to an absolute suitable amplitude for bubble effect */
+/* Apply smooth transition from old amplitude towards new amplitude */
 uint8_t LEDMusicEffects::compute_bubble_amplitude(uint8_t amplitude)
 {
-  uint8_t adaptedAmplitude;
-  
-  if(amplitude > 75) adaptedAmplitude = 4;
-  else if(amplitude > 50) adaptedAmplitude = 3;
-  else if(amplitude > 40) adaptedAmplitude = 2;
-  else adaptedAmplitude = 1;
+  uint8_t targetAmplitude;
 
-  return adaptedAmplitude;
+  /* Compute target amplitude */
+  if(amplitude > 75) targetAmplitude = 5;
+  else if(amplitude > 50) targetAmplitude = 4;
+  else if(amplitude > 40) targetAmplitude = 3;
+  else if(amplitude > 25) targetAmplitude = 2;
+  else targetAmplitude = 1;
+
+  /* Compute a smoothed new amplitude */
+  m_smooth_amplitude = ((float)targetAmplitude + m_smooth_amplitude) / 2;
+  targetAmplitude = (uint8_t)round(m_smooth_amplitude);
+  return targetAmplitude;
 }
 
 /* Bubble effect */
@@ -223,7 +231,8 @@ void LEDMusicEffects::bubble_effect(
   uint8_t g, //new color
   uint8_t b, //new color
   uint8_t amplitude, //effect amplitude. Range [0-100]
-  uint8_t direction //effect direction
+  uint8_t direction, //effect direction
+  bool& isNewPayload //new payload received indication
 )
 {
   unsigned long now = m_timer->getTime();
@@ -234,6 +243,29 @@ void LEDMusicEffects::bubble_effect(
 
     /* Adapt the amplitude for this effect */
     amplitude = compute_bubble_amplitude(amplitude);
+
+    /* Increment non-received payload counter */
+    if(!isNewPayload)
+    {
+      m_no_payload_counter++;
+    }
+    else
+    {
+      m_no_payload_counter = 0;
+    }
+
+    /* Set color to 0 if too many iterations without new payload */
+    if(m_no_payload_counter > MAX_PAYLOAD_LOSS)
+    {
+      m_no_payload_counter = MAX_PAYLOAD_LOSS; //Avoid overflow
+      r = 0;
+      g = 0;
+      b = 0;
+      Serial.println("Excessive message loss. Forcing color to 0");
+    }
+
+    /* Delete new payload flag */
+    isNewPayload = false;
     
     if(direction == 0) //Up 
     {

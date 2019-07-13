@@ -225,6 +225,7 @@ void UDPHandler::network_loop()
     m_lamp_status_request->color.G = m_lamp_status_request_local.color.G;
     m_lamp_status_request->color.B = m_lamp_status_request_local.color.B;
     m_lamp_status_request->amplitude = m_lamp_status_request_local.amplitude;
+    m_lamp_status_request->new_payload = true;
 
     m_received_color_payload = false;
   }
