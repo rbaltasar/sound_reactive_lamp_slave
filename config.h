@@ -7,17 +7,8 @@
 #define IR_PIN 8
 
 #define LED_BUILTIN 2
-
-#if HW_PLATFORM == 0
-# define LED_PIN 3
-# define FASTLED_ESP8266_RAW_PIN_ORDER
-#elif HW_PLATFORM == 1
 # define LED_PIN 21
-#endif
-
 #define COLOR_MODE GRB//GRB
-
-#define PRINT_DELAY 37
 
 #define R_DEFAULT 255
 #define G_DEFAULT 218
