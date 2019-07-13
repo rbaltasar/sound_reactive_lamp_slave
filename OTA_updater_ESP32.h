@@ -1,8 +1,3 @@
-
-#include "OTA_updater.h"
-
-#if HW_PLATFORM == 1
-
 #if !defined OTAUPDATER_ESP32_H
 #define OTAUPDATER_ESP32_H
 
@@ -17,7 +12,7 @@
 # include <ESPmDNS.h>
 # include <Update.h>
 
-class OTAUpdater_ESP32: public OTAUpdater
+class OTAUpdater_ESP32
 {
 
 private:
@@ -117,7 +112,6 @@ public:
   
 };
 
-#endif
 #endif
 /*********************************************************************************************************
   END FILE

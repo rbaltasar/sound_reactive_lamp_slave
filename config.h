@@ -2,9 +2,6 @@
 #if !defined CONFIG_H
 #define CONFIG_H
 
-
-#define HW_PLATFORM 1
-
 //Hardware configuration
 #define NUM_LEDS 60
 #define IR_PIN 8
@@ -26,10 +23,9 @@
 #define G_DEFAULT 218
 #define B_DEFAULT 107
 
-const char masterIP[] = "192.168.2.120";
-
-#define INIT_COMM_TIMEOUT 3000
+#define INIT_COMM_TIMEOUT 60000
 #define ALIVE_PERIOD 30000
+#define HANDSHAKE_ATTEMPT_INTERVAL 3000
 
 #define AMBIENT_LIGHT_THRESHOLD 30.0
 #define AMBIENT_LIGHT_DELAY 150

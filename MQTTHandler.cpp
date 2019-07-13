@@ -28,7 +28,7 @@ void MQTTHandler::configure()
 void MQTTHandler::begin() 
 {
   /* Reconnect the client */
-  reconnect();
+  if (!m_client.connected()) reconnect();
 
   /* Restet alive timer to avoid reboot due to communication error */
   m_last_alive_rx = millis();
@@ -39,9 +39,9 @@ void MQTTHandler::stop()
 {
   //Nothing to do
   Serial.println("Stopping MQTT communication handler");
-  unsubscribe_topics();
-  delay(100);
-  m_client.disconnect();
+  //unsubscribe_topics();
+  //delay(100);
+  //m_client.disconnect();
 }
 
 /* Configure the callback function for a subscribed MQTT topic */
@@ -175,15 +175,18 @@ void MQTTHandler::callback(char* topic, byte* payload, unsigned int length) {
 void MQTTHandler::network_loop()
 {
   /* MQTT loop */
-  if (!m_client.connected()) reconnect();
   m_client.loop();
   delay(10);
 
+  /* Reconnect in case of issue */
+  if (!m_client.connected()) reconnect();
+  
   unsigned long now = millis(); 
 
   /* Publish alive message */
   if( (now - m_last_alive_tx)> ALIVE_PERIOD)
-  {   
+  { 
+    Serial.println("Publishing alive TX");
     m_client.publish("lamp_network/alive_tx", String(m_lamp_status_request->deviceID).c_str());
     m_last_alive_tx = now;
   }
@@ -234,18 +237,30 @@ void MQTTHandler::reconnect()
 
   Serial.print("checking wifi...");
   while (WiFi.status() != WL_CONNECTED) {
+    
     Serial.print(".");
+    
     delay(1000);
+    
+    m_mqtt_reconnect_counter++;
+
+    /* Restart the microcontroller after 10 failed attempts to connect */
+    if(++m_mqtt_reconnect_counter > 10)  ESP.restart();
   }
+  Serial.println("");
   
   // Loop until we're reconnected
-  if (!m_client.connected())
-  {
+  //if (!m_client.connected())
+  //{
     Serial.print("Attempting MQTT connection...");
     // Attempt to connect
     if (m_client.connect(m_lamp_status_request->IPAddress_string.c_str())) //Unique name for each instance of a slave
     {
       Serial.println("connected");
+
+      delay(1000);
+
+      m_client.publish("lamp_network/connected",m_lamp_status_request->IPAddress_string.c_str()); //This is always published
       //Resubscribe
       subscribe_topics();
       m_mqtt_reconnect_counter = 0;
@@ -256,12 +271,14 @@ void MQTTHandler::reconnect()
       Serial.print(m_client.state());
       Serial.println(" try again in 5 seconds");
       // Wait 0.5 seconds before retrying
-      delay(500);
+      delay(1000);
 
       /* Restart the microcontroller after 10 failed attempts to connect */
       if(++m_mqtt_reconnect_counter > 10)  ESP.restart();
     }
-  }  
+
+    m_client.publish("lamp_network/connected","Second time!!!"); //This is always published
+  //}  
 }
 
 /* Publish initial communication handshake */
@@ -282,7 +299,10 @@ void MQTTHandler::publish_initcomm()
   char JSONmessageBuffer[256];
   root_send.printTo(JSONmessageBuffer, sizeof(JSONmessageBuffer));
   
-  m_client.publish("lamp_network/initcomm_tx", JSONmessageBuffer); 
+  auto pubSuccess = m_client.publish("lamp_network/initcomm_tx",JSONmessageBuffer);
+
+  Serial.print("Publish result: ");
+  Serial.println(pubSuccess);
 }
 
 /* Finish communication handshake */

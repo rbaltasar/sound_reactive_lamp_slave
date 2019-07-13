@@ -81,7 +81,9 @@ void setup()
   lamp_state.val.initState.isCompleted = false;
 
   /* Setup finished. Show leds */
-  //LED_controller.setLeds(lamp_state.val.color,0,NUM_LEDS/3);
+  LED_controller.setLeds(lamp_state.val.color,0,NUM_LEDS/3);
+
+  Serial.println("Finished setup");
 }
 
 /* Get the IP address in String format */
@@ -289,7 +291,7 @@ void initComm()
     //LED_controller.setLeds(lamp_state.val.color,0,(NUM_LEDS*2)/3);
 
     /* Initiate handshake. TODO: check that MQTT communication is being used */
-    //communication_handler->publish_initcomm();
+    communication_handler->publish_initcomm();
     
     /* Update handshake state */
     lamp_state.val.initState.hasStarted = true;
@@ -311,6 +313,9 @@ void initComm()
       delay(500);
 
       /* Finish the handshake */
+      communication_handler->finish_initcomm();
+
+      /* Begin normal communication */
       communication_handler->begin();
       
       /* Give visual feedback */
@@ -331,14 +336,13 @@ void initComm()
       lamp_state.val.color.G = 0;
       lamp_state.val.color.B = 0;
       LED_controller.setAllLeds(lamp_state.val.color,0);
-      delay(1000);
+      delay(500);
 
       /* Restart microcontroller */
       ESP.restart();
     }
-
     /* Timeout. Show error and reset */
-    else if( (millis() - m_last_iteration_reconnect ) > 2000 )
+    else if( (millis() - m_last_iteration_reconnect ) > HANDSHAKE_ATTEMPT_INTERVAL )
     {
       /* Initiate handshake. TODO: check that MQTT communication is being used */
       communication_handler->publish_initcomm();
