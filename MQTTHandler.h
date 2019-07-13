@@ -40,11 +40,12 @@ private:
     "lamp_network/effect_delay",
     "lamp_network/effect_speed",
     "lamp_network/alive_rx",
-    "lamp_network/initcommrx",
-    "livingroom_node/light"
+    "livingroom_node/light",
+    "lamp_network/initcommrx"
   };
 
   void subscribe_topics();
+  void unsubscribe_topics();
   void callback(char* topic, byte* payload, unsigned int length);
 
 public: 

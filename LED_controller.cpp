@@ -77,7 +77,7 @@ void LEDController::update_color()
 void LEDController::feed()
 {
   /* Static effects - Range [10,99] */
-  else if(m_mode >= 10 && m_mode < 99)
+  if(m_mode >= 10 && m_mode < 99)
   {
     switch(m_mode - 10)
     {

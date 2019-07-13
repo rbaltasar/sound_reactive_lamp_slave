@@ -39,6 +39,9 @@ void MQTTHandler::stop()
 {
   //Nothing to do
   Serial.println("Stopping MQTT communication handler");
+  unsubscribe_topics();
+  delay(100);
+  m_client.disconnect();
 }
 
 /* Configure the callback function for a subscribed MQTT topic */
@@ -198,18 +201,29 @@ void MQTTHandler::subscribe_topics()
 {
   /* Subscribe to topics */
   Serial.println("Subscribing to topics");
-  
-  if(!m_lamp_status_request->initState.isCompleted)
-  {
-    m_client.subscribe("lamp_network/initcommrx");
-  }
 
-  else
+  bool retval;
+
+  for(uint8_t i = 0; i < NUM_SUBSCRIBED_TOPICS; i++)
   {
-    for(uint8_t i = 0; i < NUM_SUBSCRIBED_TOPICS; i++)
-    {
-      m_client.subscribe(topic_subscribe_list[i].c_str());
-    }
+    retval = m_client.subscribe(topic_subscribe_list[i].c_str());
+    Serial.print("Subscribed to topic: ");
+    Serial.print(topic_subscribe_list[i].c_str());
+    Serial.print(" with result: ");
+    Serial.println(retval);
+    delay(10);
+  }
+}
+
+/* Unubscribe to all the topics from the topic list */
+void MQTTHandler::unsubscribe_topics()
+{
+  /* Subscribe to topics */
+  Serial.println("Unubscribing to topics");
+
+  for(uint8_t i = 0; i < NUM_SUBSCRIBED_TOPICS; i++)
+  {
+    m_client.unsubscribe(topic_subscribe_list[i].c_str());
   }
 }
 
@@ -241,7 +255,7 @@ void MQTTHandler::reconnect()
       Serial.print("failed, rc=");
       Serial.print(m_client.state());
       Serial.println(" try again in 5 seconds");
-      // Wait 5 seconds before retrying
+      // Wait 0.5 seconds before retrying
       delay(500);
 
       /* Restart the microcontroller after 10 failed attempts to connect */
@@ -256,8 +270,6 @@ void MQTTHandler::publish_initcomm()
 
   Serial.println("Starting communication handshake");
   
-  //m_client.subscribe("lamp_network/initcommrx");
-  
   StaticJsonBuffer<256> jsonBuffer_send;
   JsonObject& root_send = jsonBuffer_send.createObject();
 
@@ -268,21 +280,14 @@ void MQTTHandler::publish_initcomm()
   root_send["rst_1"] = "0";
 
   char JSONmessageBuffer[256];
-  root_send.printTo(JSONmessageBuffer, sizeof(JSONmessageBuffer));  
+  root_send.printTo(JSONmessageBuffer, sizeof(JSONmessageBuffer));
+  
   m_client.publish("lamp_network/initcomm_tx", JSONmessageBuffer); 
 }
 
 /* Finish communication handshake */
 void MQTTHandler::finish_initcomm()
-{
-  /* Sbuscribe to topics */
-  subscribe_topics();
-  
-  /* Unsubscribe to communication handshake topic */
-  m_client.unsubscribe("lamp_network/initcommrx");
-
-  /* Begin the normal communication */
-  begin();
+{  
 }
 
 /*********************************************************************************************************

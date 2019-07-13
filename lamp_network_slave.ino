@@ -47,7 +47,6 @@ void setup()
   /* Start with MQTT communication. Create object */  
   communication_handler = &mqtt_handler;
   communication_handler->configure();
-
   communication_handler->begin();
 
   /* Get reset reason */
@@ -290,7 +289,7 @@ void initComm()
     //LED_controller.setLeds(lamp_state.val.color,0,(NUM_LEDS*2)/3);
 
     /* Initiate handshake. TODO: check that MQTT communication is being used */
-    communication_handler->publish_initcomm();
+    //communication_handler->publish_initcomm();
     
     /* Update handshake state */
     lamp_state.val.initState.hasStarted = true;
@@ -303,9 +302,6 @@ void initComm()
     /* Check if answer was received */
     if(lamp_state.val.initState.isCompleted)
     {
-      /* Finish the handshake */
-      communication_handler->finish_initcomm();
-      
       /* Update system state. Go to normal mode */
       lamp_state.val.sysState = NORMAL;
       
@@ -313,6 +309,9 @@ void initComm()
       setup_OTA();
 
       delay(500);
+
+      /* Finish the handshake */
+      communication_handler->begin();
       
       /* Give visual feedback */
       LED_controller.setAllLeds(lamp_state.val.color,0);      
@@ -339,13 +338,10 @@ void initComm()
     }
 
     /* Timeout. Show error and reset */
-    else if( (millis() - m_last_iteration_reconnect ) > 500 )
+    else if( (millis() - m_last_iteration_reconnect ) > 2000 )
     {
       /* Initiate handshake. TODO: check that MQTT communication is being used */
-      communication_handler->begin();
-      delay(10);
       communication_handler->publish_initcomm();
-
       m_last_iteration_reconnect = millis();
     }
   }
