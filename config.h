@@ -6,6 +6,8 @@
 #define NUM_LEDS 60
 #define IR_PIN 8
 
+#define NUM_MAX_LAMPS 6
+
 #define LED_BUILTIN 2
 # define LED_PIN 21
 #define COLOR_MODE GRB//GRB

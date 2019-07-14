@@ -135,7 +135,7 @@ struct udp_payload_window_spectrum_msg
 {
   uint8_t msgID;
   uint8_t numMsg;
-  udp_payload* payload;
+  udp_payload payload[NUM_MAX_LAMPS];
 };
 
 /* UDP message structure with a payload element for each number of LEDs */

@@ -18,7 +18,7 @@ class UDPHandler : public CommunicationHandler
 private:
 
   AsyncUDP m_UDP; 
-  uint8_t m_message[50];
+  uint8_t m_message[6 * NUM_MAX_LAMPS];
   lamp_status m_lamp_status_request_local;
   bool received_msg;
   bool received_mode_select;

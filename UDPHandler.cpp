@@ -137,7 +137,7 @@ void UDPHandler::process_message()
       }
       else
       {
-        /* Do not update the color if the selected effect is ENERGY BAR */
+        /* Do not update the color if the selected effect is ENERGY BAR COLOR */
         if(m_lamp_status_request->lamp_mode != (100 + ENERGY_BAR_COLOR))
         {
           m_lamp_status_request_local.color.R = msg_struct.payload.color.R;
@@ -166,10 +166,46 @@ void UDPHandler::process_message()
     }
     case PAYLOAD_WINDOW:
     {
-      udp_payload_window_spectrum_msg msg_struct = *((udp_payload_window_spectrum_msg*)m_message);
+      udp_payload_window_spectrum_msg msg_struct = (*(udp_payload_window_spectrum_msg*)m_message); 
 
-      Serial.print("Received Window Payload msg: [");
-      Serial.println("]");
+      Serial.println("Received Window Payload msg:");
+      Serial.print("Size: ");
+      Serial.println(msg_struct.numMsg);
+
+      /* Loop over all received frequency windows */
+      for(uint8_t i=0; i < msg_struct.numMsg; i++)
+      {        
+        /* Filter the message addressed to this node */
+        if(is_targeted_device(msg_struct.payload[i].mask,m_lamp_status_request->deviceID))
+        {
+          Serial.print("Message addressed to this node: ");
+          Serial.print("R: ");
+          Serial.print(msg_struct.payload[i].color.R);
+          Serial.print(" G: ");
+          Serial.print(msg_struct.payload[i].color.G);
+          Serial.print(" B: ");
+          Serial.print(msg_struct.payload[i].color.B);
+          Serial.print(" Ampl: ");
+          Serial.print(msg_struct.payload[i].amplitude);
+          Serial.print(" Mask: ");
+          Serial.println(msg_struct.payload[i].mask);
+
+          /* Do not update the color if the selected effect is ENERGY BAR COLOR */
+          if(m_lamp_status_request->lamp_mode != (100 + ENERGY_BAR_COLOR))
+          {
+            m_lamp_status_request_local.color.R = msg_struct.payload[i].color.R;
+            m_lamp_status_request_local.color.G = msg_struct.payload[i].color.G;
+            m_lamp_status_request_local.color.B = msg_struct.payload[i].color.B;
+          }
+          
+          m_lamp_status_request_local.amplitude = compute_amplitude(msg_struct.payload[i].amplitude);
+
+          m_received_color_payload = true;
+
+          /* Do not continue searching */
+          break;          
+        }        
+      }      
         
       break;
     }
@@ -204,7 +240,6 @@ void UDPHandler::synchronize(unsigned long delay_ms)
 
   /* Delay synchronization */
   delay(delay_ms);
-
 }
 
 void UDPHandler::network_loop()
