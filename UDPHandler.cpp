@@ -2,10 +2,12 @@
 
 UDPHandler::UDPHandler(lamp_status* lamp_status_request,timeSync* timer):
 CommunicationHandler(lamp_status_request,UDP,timer),
-received_mode_select(false),
-received_msg(false),
+m_received_mode_select(false),
+m_received_msg(false),
 m_received_config(false),
-m_received_color_payload(false)
+m_received_color_payload(false),
+m_last_alive_tx(0),
+m_last_alive_rx(0)
 {
  
 }
@@ -33,8 +35,8 @@ void UDPHandler::begin()
   Serial.println("Starting UDP communication handler");
  
   /* Ignore the first msg after begin --> may be corrupted data in UDP buffer --> prevent switch to MQTT */
-  received_msg = false;
-  received_mode_select = false;
+  m_received_msg = false;
+  m_received_mode_select = false;
   m_received_color_payload = false;
   m_received_config = false;
 
@@ -45,10 +47,14 @@ void UDPHandler::begin()
 
         m_UDP.onPacket([this](AsyncUDPPacket packet) {
 
+            /* Copy message into local buffer */
             noInterrupts();
             memcpy(m_message, packet.data(), packet.length());
-            received_msg = true;          
+            m_received_msg = true;          
             interrupts();
+
+            /* Reset alive check timer (Rx direction) */
+            m_last_alive_rx = millis();
 
         });       
     }
@@ -56,6 +62,7 @@ void UDPHandler::begin()
 
 /* Convert a relative amplitude in an interval [0-100] to an absolute amplitude
  * proportional to the number of leds
+ * Todo: Non UDP-relevant, move to music effects
  */
 uint8_t UDPHandler::compute_amplitude(uint8_t relative_amplitude)
 {
@@ -77,7 +84,7 @@ void UDPHandler::process_message()
 
       m_lamp_status_request_local.lamp_mode = msg_struct.mode_select;
 
-      received_mode_select = true;
+      m_received_mode_select = true;
       
       Serial.print("Received Mode Select: ");
       Serial.println(msg_struct.mode_select);
@@ -223,7 +230,7 @@ void UDPHandler::process_message()
       break;                 
   }
 
-  received_msg = false;
+  m_received_msg = false;
 
 }
 
@@ -242,10 +249,17 @@ void UDPHandler::synchronize(unsigned long delay_ms)
   delay(delay_ms);
 }
 
+void UDPHandler::send_alive()
+{
+  uint8_t nodeId = m_lamp_status_request->deviceID;
+  
+  //m_UDP.sendTo(IP, port, nodeId, sizeof(nodeId));
+}
+
 void UDPHandler::network_loop()
 {
-
-  if(received_msg)
+  /* Read the message from the intermediate buffer and extract the information */
+  if(m_received_msg)
   {
     noInterrupts();
     process_message();
@@ -253,7 +267,6 @@ void UDPHandler::network_loop()
   }
 
   /* Synchronous update of the shared memory */
-  //Serial.println("Network loop UDP!");
   if(m_received_color_payload)
   {
     m_lamp_status_request->color.R = m_lamp_status_request_local.color.R;
@@ -261,28 +274,43 @@ void UDPHandler::network_loop()
     m_lamp_status_request->color.B = m_lamp_status_request_local.color.B;
     m_lamp_status_request->amplitude = m_lamp_status_request_local.amplitude;
     m_lamp_status_request->new_payload = true;
-
     m_received_color_payload = false;
   }
- 
-  if(received_mode_select)
+  else if(m_received_mode_select)
   {
     m_lamp_status_request->lamp_mode = m_lamp_status_request_local.lamp_mode;
-    received_mode_select = false;
+    m_received_mode_select = false;
     Serial.println("Updating shared mode");
     Serial.println(m_lamp_status_request->lamp_mode);
   }
-  if(m_lamp_status_request_local.resync)
-  {
-    m_lamp_status_request->resync = true;
-    m_lamp_status_request_local.resync = false;
-  }
-  if(m_received_config)
+  else if(m_received_config)
   {
     m_lamp_status_request->effect_delay = m_lamp_status_request_local.effect_delay;
     m_lamp_status_request->effect_direction = m_lamp_status_request_local.effect_direction;
     m_lamp_status_request->color_increment = m_lamp_status_request_local.color_increment;
     m_received_config = false;
+  }
+  else if(m_lamp_status_request_local.resync)
+  {
+    m_lamp_status_request->resync = true;
+    m_lamp_status_request_local.resync = false;
+  }
+
+  unsigned long now = millis(); 
+
+  /* Publish alive message */
+  if( (now - m_last_alive_tx) > ALIVE_PERIOD)
+  { 
+    Serial.println("Publishing alive TX (UDP)");
+    send_alive();
+    m_last_alive_tx = now;
+  }
+
+  /* Handle loss of UDP communication. Go back to MQTT mode */
+  if( (now - m_last_alive_rx)> (3*ALIVE_PERIOD))
+  {   
+    Serial.println("Lost UDP connection. Switch back to normal mode");
+    m_lamp_status_request->lamp_mode = 1;
   }
 
 }

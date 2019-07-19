@@ -360,6 +360,13 @@ void LEDMusicEffects::generate_static_colors(
    
     /* Add color to the led shadow memory */
     m_static_color[i] = CRGB(rgb_color.R,rgb_color.G,rgb_color.B);
+
+    Serial.print(rgb_color.R);
+    Serial.print("/");
+    Serial.print(rgb_color.G);
+    Serial.print("/");
+    Serial.println(rgb_color.B);
+
   }  
 }
 

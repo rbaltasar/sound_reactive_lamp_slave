@@ -17,17 +17,22 @@ class UDPHandler : public CommunicationHandler
 
 private:
 
-  AsyncUDP m_UDP; 
+  /* UDP client */
+  AsyncUDP m_UDP;
+  /* Intermediate buffer for fast callback handling */
   uint8_t m_message[6 * NUM_MAX_LAMPS];
+  /* Local shadow of lamp status for intermediate buffering */
   lamp_status m_lamp_status_request_local;
-  bool received_msg;
-  bool received_mode_select;
-  bool m_received_config;
-  bool m_received_color_payload;
-  
+  /* Local states */
+  bool m_received_msg, m_received_mode_select, m_received_config, m_received_color_payload;
+  /* Alive check timestamps */
+  unsigned long m_last_alive_tx, m_last_alive_rx;
+
+  /* Private functions */
   void synchronize(unsigned long delay_ms);
   UDP_Message_Id get_msg_id(uint8_t msgID);
   void process_message();
+  void send_alive();
   uint8_t compute_amplitude(uint8_t relative_amplitude);
 
 public: 
@@ -37,7 +42,7 @@ public:
 
   void begin();
   void stop();
-  void configure(){};
+  void configure(){}; //Nothing to do but overload needed
   void network_loop();
 
  

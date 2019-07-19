@@ -189,7 +189,7 @@ void MQTTHandler::network_loop()
   /* Publish alive message */
   if( (now - m_last_alive_tx)> ALIVE_PERIOD)
   { 
-    Serial.println("Publishing alive TX");
+    Serial.println("Publishing alive TX (MQTT)");
     m_client.publish("lamp_network/alive_tx", String(m_lamp_status_request->deviceID).c_str());
     m_last_alive_tx = now;
   }
