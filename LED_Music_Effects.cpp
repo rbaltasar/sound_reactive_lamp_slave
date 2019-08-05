@@ -219,7 +219,7 @@ uint8_t LEDMusicEffects::compute_bubble_amplitude(uint8_t amplitude)
   else targetAmplitude = 1;
 
   /* Compute a smoothed new amplitude */
-  m_smooth_amplitude = ((float)targetAmplitude + m_smooth_amplitude) / 2;
+  m_smooth_amplitude = ((float)targetAmplitude*3 + m_smooth_amplitude) / 4;
   targetAmplitude = (uint8_t)round(m_smooth_amplitude);
   return targetAmplitude;
 }

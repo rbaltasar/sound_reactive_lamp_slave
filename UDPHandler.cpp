@@ -40,6 +40,9 @@ void UDPHandler::begin()
   m_received_color_payload = false;
   m_received_config = false;
 
+  /* Avoid reset due to timeout when starting UDP communication */
+  m_last_alive_rx = millis();
+
   /* Default effect delay */
   m_lamp_status_request->effect_delay = 30;
 
@@ -56,6 +59,11 @@ void UDPHandler::begin()
             /* Reset alive check timer (Rx direction) */
             m_last_alive_rx = millis();
 
+            /* Store IP address of the master */
+            m_master_ip = packet.remoteIP();
+
+            //Serial.print("Received packet from: ");
+            //Serial.println(m_master_ip);
         });       
     }
 }
@@ -251,9 +259,16 @@ void UDPHandler::synchronize(unsigned long delay_ms)
 
 void UDPHandler::send_alive()
 {
-  uint8_t nodeId = m_lamp_status_request->deviceID;
+
+  Serial.println("Sending UDP alive");
   
-  //m_UDP.sendTo(IP, port, nodeId, sizeof(nodeId));
+  uint8_t nodeId = m_lamp_status_request->deviceID;
+
+  if(m_master_ip != 0)
+  {
+    m_UDP.writeTo(&nodeId, sizeof(nodeId), m_master_ip, 7002);
+  }
+  
 }
 
 void UDPHandler::network_loop()
@@ -299,7 +314,7 @@ void UDPHandler::network_loop()
   unsigned long now = millis(); 
 
   /* Publish alive message */
-  if( (now - m_last_alive_tx) > ALIVE_PERIOD)
+  if( (now - m_last_alive_tx) > ALIVE_PERIOD_UDP)
   { 
     Serial.println("Publishing alive TX (UDP)");
     send_alive();
@@ -307,7 +322,7 @@ void UDPHandler::network_loop()
   }
 
   /* Handle loss of UDP communication. Go back to MQTT mode */
-  if( (now - m_last_alive_rx)> (3*ALIVE_PERIOD))
+  if( abs(now - m_last_alive_rx) > (3*ALIVE_PERIOD_UDP))
   {   
     Serial.println("Lost UDP connection. Switch back to normal mode");
     m_lamp_status_request->lamp_mode = 1;

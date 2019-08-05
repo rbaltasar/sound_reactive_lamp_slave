@@ -17,11 +17,15 @@
 #define B_DEFAULT 107
 
 #define INIT_COMM_TIMEOUT 60000
-#define ALIVE_PERIOD 30000
+#define ALIVE_PERIOD_MQTT 30000
+#define ALIVE_PERIOD_UDP 5000
+
 #define HANDSHAKE_ATTEMPT_INTERVAL 3000
 
 #define AMBIENT_LIGHT_THRESHOLD 30.0
 #define AMBIENT_LIGHT_DELAY 150
+
+#define UDP_ALIVE_PORT 7002
 
 //----------- Configuration -------------
 //LED configuration

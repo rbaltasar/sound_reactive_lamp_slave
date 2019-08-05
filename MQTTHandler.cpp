@@ -187,7 +187,7 @@ void MQTTHandler::network_loop()
   unsigned long now = millis(); 
 
   /* Publish alive message */
-  if( (now - m_last_alive_tx)> ALIVE_PERIOD)
+  if( (now - m_last_alive_tx)> ALIVE_PERIOD_MQTT)
   { 
     Serial.println("Publishing alive TX (MQTT)");
     m_client.publish("lamp_network/alive_tx", String(m_lamp_status_request->deviceID).c_str());
@@ -195,7 +195,7 @@ void MQTTHandler::network_loop()
   }
 
   /* Reset controlelr if communication is lost (no alive message received in defined time) */
-  if( (now - m_last_alive_rx)> (3*ALIVE_PERIOD))
+  if( (now - m_last_alive_rx)> (3*ALIVE_PERIOD_MQTT))
   {   
     Serial.println("Lost MQTT connection. Reboot");
     ESP.restart();

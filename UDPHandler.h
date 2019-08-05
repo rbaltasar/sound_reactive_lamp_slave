@@ -27,6 +27,7 @@ private:
   bool m_received_msg, m_received_mode_select, m_received_config, m_received_color_payload;
   /* Alive check timestamps */
   unsigned long m_last_alive_tx, m_last_alive_rx;
+  IPAddress m_master_ip;
 
   /* Private functions */
   void synchronize(unsigned long delay_ms);
