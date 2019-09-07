@@ -1,4 +1,5 @@
 
+
 #include <rom/rtc.h>
 #include "timeSync.h"
 # include <WiFi.h>
@@ -30,6 +31,7 @@ MQTTHandler mqtt_handler(&lamp_state.val,&timer);
 UDPHandler udp_handler(&lamp_state.val,&timer);
 
 unsigned long m_last_iteration_reconnect = 0;
+unsigned long m_last_iteration_debug = 0;
 
 /* Reseat reason. Only for debugging reasons. Remove long term */
 RESET_REASON reset_reason_0;
@@ -232,6 +234,19 @@ void status_update()
   {
     mode_update();
   }
+  else
+  {
+    if((millis() - m_last_iteration_debug) > 2000)
+    {
+      Serial.println("No mode update request received:");
+      Serial.print("Current mode: ");
+      Serial.print(lamp_state.old.lamp_mode);
+      Serial.print(" / Current request: ");
+      Serial.println(lamp_state.val.lamp_mode);
+
+      m_last_iteration_debug = millis();
+    }
+  }
 
   /* Check difference in light */
   if((lamp_state.val.light_amount != lamp_state.old.light_amount) && (lamp_state.val.lamp_mode == 4))
@@ -256,10 +271,10 @@ void status_update()
   /* Check difference in color request */
   else if(lamp_state.val.color.R != lamp_state.old.color.R || lamp_state.val.color.G != lamp_state.old.color.G || lamp_state.val.color.B != lamp_state.old.color.B)
   {
-    Serial.print("Received change request to color: ");
-    Serial.println(lamp_state.val.color.R);
-    Serial.println(lamp_state.val.color.G);   
-    Serial.println(lamp_state.val.color.B);  
+    //Serial.print("Received change request to color: ");
+    //Serial.println(lamp_state.val.color.R);
+    //Serial.println(lamp_state.val.color.G);   
+    //Serial.println(lamp_state.val.color.B);  
 
     /* Shadow current change for evaluation of new requests */
     lamp_state.old.color.R = lamp_state.val.color.R;
