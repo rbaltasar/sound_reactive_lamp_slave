@@ -3,7 +3,7 @@
 #define CONFIG_H
 
 //Hardware configuration
-#define NUM_LEDS 60
+#define NUM_LEDS 60 //Normal lamp: 60 / Minilamp: 38
 #define IR_PIN 8
 
 #define NUM_MAX_LAMPS 6

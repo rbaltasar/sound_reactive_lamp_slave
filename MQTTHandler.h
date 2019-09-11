@@ -22,7 +22,7 @@ class MQTTHandler : public CommunicationHandler
 
 private:
 
-  DynamicJsonBuffer jsonBuffer;
+  //DynamicJsonBuffer jsonBuffer;
   WiFiClient espClient;
   PubSubClient m_client;
 
