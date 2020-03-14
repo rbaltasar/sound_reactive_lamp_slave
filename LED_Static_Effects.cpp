@@ -136,7 +136,7 @@ void LEDStaticEffects::Strobe(byte red, byte green, byte blue, int StrobeCount, 
     order = m_effect_state[1];
   }
 
-  if( ((now - m_last_iteration) > FlashDelay) && ( (order == 0) || (order == 1) ) )
+  if( ((now - m_last_iteration) > FlashDelay) )
   {
     m_last_iteration = now;
 
@@ -150,24 +150,9 @@ void LEDStaticEffects::Strobe(byte red, byte green, byte blue, int StrobeCount, 
     {
       setAll(0,0,0);
       showStrip();
-      if(++j < StrobeCount) order = 0;
-      else
-      {
-        j = 0;
-        order = 2;
-      }
+      order = 0;
     }
   }
-
-  else if ( ((now - m_last_iteration) > EndPause) && (order == 2)  )
-  {
-    Serial.println("Running Strobe");
-    Serial.println(StrobeCount);
-    Serial.println(FlashDelay);
-    Serial.println(EndPause);
-    order = 0;
-  }
-
 
   m_effect_state[0] = j;
   m_effect_state[1] = order;

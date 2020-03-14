@@ -3,14 +3,14 @@
 #define CONFIG_H
 
 //Hardware configuration
-#define NUM_LEDS 60
+#define NUM_LEDS 100 //Normal lamp: 60 / Minilamp: 38 / Christmas: 50
 #define IR_PIN 8
 
 #define NUM_MAX_LAMPS 6
 
 #define LED_BUILTIN 2
 # define LED_PIN 21
-#define COLOR_MODE GRB//GRB
+#define COLOR_MODE RGB //GRB
 
 #define R_DEFAULT 255
 #define G_DEFAULT 218

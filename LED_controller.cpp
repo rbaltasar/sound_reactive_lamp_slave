@@ -138,7 +138,7 @@ void LEDController::feed()
                                     {m_lamp_status_request->color.R, m_lamp_status_request->color.G, m_lamp_status_request->color.R},
                                     {m_lamp_status_request->color.G, m_lamp_status_request->color.B, m_lamp_status_request->color.G},
                                     {m_lamp_status_request->color.R, m_lamp_status_request->color.B, m_lamp_status_request->color.B}};
-         m_static_effects->BouncingColoredBalls(m_lamp_status_request->effect_amount, color, true, 2);
+         m_static_effects->BouncingColoredBalls(m_lamp_status_request->effect_amount, color, true, 0);
          break;
       }
       case METEOR_RAIN:

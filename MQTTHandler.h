@@ -15,14 +15,14 @@
 #include "CommunicationHandler.h"
 
 /* List of subscribed topics */
-#define NUM_SUBSCRIBED_TOPICS 8
+#define NUM_SUBSCRIBED_TOPICS 10
 
 class MQTTHandler : public CommunicationHandler
 {
 
 private:
 
-  DynamicJsonBuffer jsonBuffer;
+  //DynamicJsonBuffer jsonBuffer;
   WiFiClient espClient;
   PubSubClient m_client;
 
@@ -36,6 +36,8 @@ private:
   String topic_subscribe_list[NUM_SUBSCRIBED_TOPICS] = {
     "lamp_network/mode_request",
     "lamp_network/light_intensity",
+    "lamp_network/light_intensity_decrease",
+    "lamp_network/light_intensity_increase",
     "lamp_network/light_color",
     "lamp_network/effect_delay",
     "lamp_network/effect_speed",
